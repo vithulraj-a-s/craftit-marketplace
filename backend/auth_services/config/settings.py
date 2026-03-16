@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    'users'
+    'users',
+
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -90,6 +92,23 @@ DATABASES = {
 
 # custom user model created using AbstractBaseuser
 AUTH_USER_MODEL = "users.User"
+
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES" : (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES":(
+        "rest_framework.permissions.AllowAny",
+    )
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME":timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME":timedelta(days=1),
+    "AUTH_HEADERS_TYPE": ("Bearer",),
+}
 
 
 # Password validation
