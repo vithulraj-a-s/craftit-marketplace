@@ -48,6 +48,9 @@ class LoginSerializer(serializers.Serializer): # serializer for login using emai
         
         if not user.is_active:
             raise AuthenticationFailed("Account disabled")
+
+        if not user.is_verified:
+            raise AuthenticationFailed("Account not verified. Please verify! ")
         
         user.last_login = timezone.now()
 
@@ -87,4 +90,13 @@ class LogoutSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid or expired token")
         
         return attrs
+
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
