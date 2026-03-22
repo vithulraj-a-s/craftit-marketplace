@@ -9,5 +9,8 @@ urlpatterns = [
     path("me/",views.MeView.as_view(), name= "me"),
     path("logout/",views.logoutView.as_view(), name= "logout"),
     path("verify-otp/",views.verifyOTPView.as_view(), name="verify-otp"),
-    path("resend-otp/",views.ResendOTPView.as_view(), name="resend-otp")
+    path("resend-otp/",views.ResendOTPView.as_view(), name="resend-otp"),
+    path("forgot-password/", views.ForgetPasswordView.as_view(), name="forgot-password"),
+    path("verify-reset-otp/", views.VerifyResetOTPView.as_view(), name="verify-reset-otp"),
+    path("reset-password/", views.ResetPasswordView.as_view(), name="reset-password"),
 ]

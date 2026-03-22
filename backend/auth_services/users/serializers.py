@@ -5,6 +5,9 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from config.core.redis_client import redis_client
+from config.core.services.otp_service import MAX_LOGIN_ATTEMPTS, LOGIN_ATTEMPT_EXPIRY
+
 
 # this is the serializer for registration
 class RegisterSerializer(serializers.ModelSerializer):
@@ -38,13 +41,28 @@ class LoginSerializer(serializers.Serializer): # serializer for login using emai
         email = data.get("email")
         password = data.get("password")
 
+        attempts_key = f"login_attempts:{email}"
+        attempts = redis_client.get(attempts_key)
+
+        if attempts and int(attempts) >= MAX_LOGIN_ATTEMPTS:
+            raise AuthenticationFailed("Too many attempts. Try again later")
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             raise AuthenticationFailed("Invalid credentials")
         
+        
         if not user.check_password(password):
+
+            new_attempts = redis_client.incr(attempts_key)
+
+            if new_attempts == 1:
+                redis_client.expire(attempts_key,LOGIN_ATTEMPT_EXPIRY)
+
             raise AuthenticationFailed("Invalid credentials")
+        
+        redis_client.delete(attempts_key)
         
         if not user.is_active:
             raise AuthenticationFailed("Account disabled")
@@ -57,6 +75,7 @@ class LoginSerializer(serializers.Serializer): # serializer for login using emai
         user.save(update_fields=["last_login"])
 
         refresh = RefreshToken.for_user(user)
+
 
         return {
             "access": str(refresh.access_token),
@@ -100,3 +119,14 @@ class VerifyOTPSerializer(serializers.Serializer):
 class ResendOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class VerifyResetOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    new_password = serializers.CharField(write_only=True)

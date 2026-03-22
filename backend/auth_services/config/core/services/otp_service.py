@@ -5,8 +5,13 @@ from config.core.services.email_service import send_otp_mail
 
 OTP_EXPIRY = 300
 RESEND_COOLDOWN = 60  # seconds
+
 MAX_OTP_ATTEMPTS = 5
 ATTEMPT_EXPIRY = 300
+
+# works with the lgin rate limiting 
+MAX_LOGIN_ATTEMPTS = 5
+LOGIN_ATTEMPT_EXPIRY = 300
 
 def send_otp(email: str):
     
