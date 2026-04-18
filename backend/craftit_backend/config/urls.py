@@ -23,5 +23,7 @@ urlpatterns = [
     path('api/',include("profiles.urls")),
     path("api/portfolio/", include("portfolio.urls")),
     path("api/saved-artists/", include("saved_artists.urls")),
-    path("api/portrait-requests/",include("portrait_requests.urls")),
+    path("api/portrait-requests/", include("portrait_requests.urls")),
+    path("api/quotes/", include("quotes.urls")),
+    path("api/orders/", include("orders.urls")),
 ]

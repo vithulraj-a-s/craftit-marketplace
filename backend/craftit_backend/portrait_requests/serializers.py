@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from .models import PortraitRequest
-from profiles.models import ArtistProfile
-
-
+from profiles.models import ArtistProfile, ClientProfile
 class PortraitRequestCreateSerializer(serializers.ModelSerializer):
     artist_slug = serializers.CharField(write_only=True)
 
@@ -18,32 +16,47 @@ class PortraitRequestCreateSerializer(serializers.ModelSerializer):
             "expected_delivery_date",
         ]
 
-    def validate_artist_slug(self, value):
+    def validate(self, attrs):
+        print(attrs)
+        request = self.context["request"]
+        print(request)
+        artist_slug = attrs.get("artist_slug")
+
         try:
-            artist = ArtistProfile.objects.get(slug=value)
+            artist_profile = ArtistProfile.objects.get(slug=artist_slug)
         except ArtistProfile.DoesNotExist:
-            raise serializers.ValidationError("Artist not found.")
+            raise serializers.ValidationError({
+                "artist_slug": "Artist not found."
+            })
 
-        if not artist.is_available_for_commission:
-            raise serializers.ValidationError(
-                "This artist is not currently accepting commissions."
-            )
+        if not artist_profile.is_available_for_commission:
+            raise serializers.ValidationError({
+                "artist_slug": "This artist is not currently accepting commissions."
+            })
 
-        return value
+        attrs["artist_profile"] = artist_profile
+        return attrs
 
     def create(self, validated_data):
         request = self.context["request"]
 
-        artist_slug = validated_data.pop("artist_slug")
-        artist_profile = ArtistProfile.objects.get(slug=artist_slug)
+        validated_data.pop("artist_slug")
+        artist_profile = validated_data.pop("artist_profile")
 
-        client_profile = request.user.client_profile
+        try:
+            client_profile = ClientProfile.objects.get(user=request.user)
+        except ClientProfile.DoesNotExist:
+            raise serializers.ValidationError({
+                "detail": "Client profile not found."
+            })
 
         return PortraitRequest.objects.create(
             client_profile=client_profile,
             artist_profile=artist_profile,
             **validated_data,
         )
+
+
     
 class PortraitRequestSerializer(serializers.ModelSerializer):
     artist = serializers.SerializerMethodField()
@@ -77,3 +90,4 @@ class PortraitRequestSerializer(serializers.ModelSerializer):
             "full_name": obj.client_profile.full_name,
             "profile_image": obj.client_profile.profile_image.url if obj.client_profile.profile_image else None,
         }
+    

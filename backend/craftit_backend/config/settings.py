@@ -49,7 +49,9 @@ INSTALLED_APPS = [
     'portfolio',
     'saved_artists',
     'portrait_requests',
-    
+    'quotes',    
+    'orders',
+    'payments',
 
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
@@ -168,6 +170,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# razorpay related configuration
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
 # redis details for implementing with django
 REDIS_HOST = os.getenv("REDIS_HOST","localhost")

@@ -135,22 +135,19 @@ class PortraitRequestDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class UpdatePortraitRequestStatusView(APIView):
-    permission_classes = [IsAuthenticated, IsArtistUser]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, request_id):
         try:
-            artist_profile = ArtistProfile.objects.get(user=request.user)
-        except ArtistProfile.DoesNotExist:
+            portrait_request = PortraitRequest.objects.select_related(
+                "artist_profile",
+                "client_profile",
+            ).get(id=request_id)
+        except PortraitRequest.DoesNotExist:
             return Response(
-                {"detail": "Artist profile not found."},
+                {"detail": "Portrait request not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        portrait_request = get_object_or_404(
-            PortraitRequest,
-            id=request_id,
-            artist_profile=artist_profile,
-        )
 
         new_status = request.data.get("status")
 
@@ -162,23 +159,64 @@ class UpdatePortraitRequestStatusView(APIView):
 
         new_status = new_status.lower()
 
-        allowed_statuses = [
-            PortraitRequest.Status.ACCEPTED,
-            PortraitRequest.Status.REJECTED,
-        ]
+        # CLIENT can only cancel their own pending request
+        if request.user.role == "CLIENT":
+            try:
+                client_profile = ClientProfile.objects.get(user=request.user)
+            except ClientProfile.DoesNotExist:
+                return Response(
+                    {"detail": "Client profile not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
-        if new_status not in allowed_statuses:
+            if portrait_request.client_profile != client_profile:
+                return Response(
+                    {"detail": "Not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if new_status != PortraitRequest.Status.CANCELLED:
+                return Response(
+                    {
+                        "detail": "Clients can only cancel portrait requests."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # ARTIST can only reject their own pending request
+        elif request.user.role == "ARTIST":
+            try:
+                artist_profile = ArtistProfile.objects.get(user=request.user)
+            except ArtistProfile.DoesNotExist:
+                return Response(
+                    {"detail": "Artist profile not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if portrait_request.artist_profile != artist_profile:
+                return Response(
+                    {"detail": "Not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if new_status != PortraitRequest.Status.REJECTED:
+                return Response(
+                    {
+                        "detail": "Artists can only reject portrait requests manually."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        else:
             return Response(
-                {
-                    "detail": "Status must be either 'accepted' or 'rejected'."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": "Invalid user role."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         if portrait_request.status != PortraitRequest.Status.PENDING:
             return Response(
                 {
-                    "detail": "This request has already been processed."
+                    "detail": "This portrait request has already been processed."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -187,5 +225,4 @@ class UpdatePortraitRequestStatusView(APIView):
         portrait_request.save(update_fields=["status", "updated_at"])
 
         serializer = PortraitRequestSerializer(portrait_request)
-
         return Response(serializer.data, status=status.HTTP_200_OK)

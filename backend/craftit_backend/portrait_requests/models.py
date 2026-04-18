@@ -1,12 +1,16 @@
 from django.db import models
 from profiles.models import ArtistProfile, ClientProfile
+from django.core.exceptions import ValidationError
+from datetime import date
 
 # Create your models here.
 class PortraitRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
-        ACCEPTED = "accepted", "Accepted"
+        QUOTE_SENT = "quote_sent", "Quote Sent"
         REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"    
+
 
     client_profile = models.ForeignKey(
         ClientProfile,
@@ -55,31 +59,46 @@ class PortraitRequest(models.Model):
         ordering = ["-created_at"]
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-        from datetime import date
 
         if self.portrait_style:
-            self.portrait_style = self.portrait_style.lower()
+            self.portrait_style = self.portrait_style.strip().lower()
 
-        if self.artist_profile and self.portrait_style:
-            if self.portrait_style not in self.artist_profile.portrait_styles:
-                raise ValidationError(
-                    {
-                        "portrait_style": "This artist does not support that portrait style."
-                    }
-                )
+        if (self.artist_profile and self.portrait_style and self.portrait_style not in self.artist_profile.portrait_styles):
+            raise ValidationError({
+                "portrait_style": "This artist does not support that portrait style."
+            })
+
+        if not self.artist_profile.is_available_for_commission:
+            raise ValidationError({
+                "artist_profile": "This artist is not accepting commissions."
+            })
 
         if self.budget is not None and self.budget < 0:
-            raise ValidationError({"budget": "Budget cannot be negative."})
+            raise ValidationError({
+                "budget": "Budget cannot be negative."
+            })
 
-        if self.expected_delivery_date:
-            if self.expected_delivery_date <= date.today():
-                raise ValidationError(
-                    {
-                        "expected_delivery_date": "Expected delivery date must be in the future."
-                    }
-                )
-            
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+        if self.expected_delivery_date and self.expected_delivery_date <= date.today():
+            raise ValidationError({
+                "expected_delivery_date": "Expected delivery date must be in the future."
+            })
+
+        if self.pk:
+            previous = PortraitRequest.objects.get(pk=self.pk)
+
+            allowed_transitions = {
+                self.Status.PENDING: [
+                    self.Status.QUOTE_SENT,
+                    self.Status.REJECTED,
+                    self.Status.CANCELLED,
+                ],
+                self.Status.QUOTE_SENT: [],
+                self.Status.REJECTED: [],
+                self.Status.CANCELLED: [],
+            }
+
+            if previous.status != self.status:
+                if self.status not in allowed_transitions[previous.status]:
+                    raise ValidationError({
+                        "status": f"Cannot change status from {previous.status} to {self.status}."
+                    })
