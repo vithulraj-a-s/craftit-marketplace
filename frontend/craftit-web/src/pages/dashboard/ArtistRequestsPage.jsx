@@ -81,7 +81,7 @@ export default function ArtistRequestsPage() {
                   {getStatusBadge(req.status)}
                 </div>
                 <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-gray-600 font-medium">
-                  <div><span className="text-gray-400">Client:</span> {req.client?.display_name || 'Anonymous Client'}</div>
+                  <div><span className="text-gray-400">Client:</span> {req.client?.full_name || 'Anonymous Client'}</div>
                   <div className="capitalize"><span className="text-gray-400">Style:</span> {req.portrait_style}</div>
                   <div className="flex items-center gap-1">Rs {req.budget ? req.budget : 'Open'}</div>
                   <div className="flex items-center gap-1"><Calendar size={14} className="text-gray-400"/> {new Date(req.created_at).toLocaleDateString()}</div>
@@ -89,31 +89,30 @@ export default function ArtistRequestsPage() {
               </div>
               
               <div className="flex flex-col sm:flex-row justify-center items-center gap-2 shrink-0">
+                <Link 
+                  to={`/dashboard/artist/requests/${req.id}`}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold text-sm rounded-xl transition-colors border border-gray-200"
+                >
+                  Send Quote
+                </Link>
+                
                 {req.status === 'pending' && (
-                  <div className="flex gap-2 w-full sm:w-auto mb-3 sm:mb-0">
-                    <button 
-                      onClick={() => handleStatusUpdate(req.id, 'accepted')}
-                      disabled={actionLoading === req.id}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2.5 bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm rounded-xl transition-colors border border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Check size={16} /> Accept
-                    </button>
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <button 
                       onClick={() => handleStatusUpdate(req.id, 'rejected')}
                       disabled={actionLoading === req.id}
                       className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-sm rounded-xl transition-colors border border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <X size={16} /> Reject
+                      <X size={16} /> Reject Request
                     </button>
+                    {/* <Link 
+                      to={`/dashboard/artist/requests/${req.id}`}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Check size={16} /> Send Quote
+                    </Link> */}
                   </div>
                 )}
-                
-                <Link 
-                  to={`/dashboard/artist/requests/${req.id}`}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold text-sm rounded-xl transition-colors border border-gray-200"
-                >
-                  View Details <ArrowRight size={16} />
-                </Link>
               </div>
             </div>
           ))}

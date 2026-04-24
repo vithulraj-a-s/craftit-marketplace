@@ -11,8 +11,8 @@ export default function ArtistDashboard() {
     { name: 'Edit Profile', path: '/dashboard/artist/profile', icon: <User size={24} />, active: true },
     { name: 'Manage Portfolio', path: '/dashboard/artist/portfolio', icon: <ImageIcon size={24} />, active: true },
     { name: 'Incoming Requests', path: '/dashboard/artist/requests', icon: <MessageSquare size={24} />, active: true },
-    { name: 'Quotes', path: '/dashboard/artist/quotes', icon: <Tag size={24} />, active: false },
-    { name: 'Orders', path: '/dashboard/artist/orders', icon: <ShoppingBag size={24} />, active: false },
+    { name: 'Quotes', path: '/dashboard/artist/quotes', icon: <Tag size={24} />, active: true },
+    { name: 'Orders', path: '/dashboard/artist/orders', icon: <ShoppingBag size={24} />, active: true },
   ];
 
   return (
@@ -38,11 +38,11 @@ export default function ArtistDashboard() {
             <h3 className={`text-lg font-bold mb-1 ${item.active ? 'text-gray-900 group-hover:text-indigo-600 transition-colors' : 'text-gray-700'}`}>
               {item.name}
             </h3>
-            {!item.active && (
-              <span className="mt-2 inline-flex absolute top-6 right-6 items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                Coming Soon
-              </span>
-            )}
+            {/* {!item.active && (
+              // <span className="mt-2 inline-flex absolute top-6 right-6 items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              //   Coming Soon available on hotstar 
+              // </span>
+            )} */}
           </Link>
         ))}
       </div>

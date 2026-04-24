@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, LayoutDashboard, User, Users, Palette, Bookmark, Inbox } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Users, Palette, Bookmark, Inbox, Package, FileText } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -34,6 +34,15 @@ export default function Navbar() {
                     <Link to="/dashboard/artist" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <LayoutDashboard size={16} /> Dashboard
                     </Link>
+                    <Link to="/dashboard/artist/requests" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                      <Inbox size={16} /> Requests
+                    </Link>
+                    <Link to="/dashboard/artist/quotes" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                      <FileText size={16} /> Quotes
+                    </Link>
+                    <Link to="/dashboard/artist/orders" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                      <Package size={16} /> Orders
+                    </Link>
                     <Link to="/dashboard/artist/profile" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <User size={16} /> My Profile
                     </Link>
@@ -50,6 +59,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/dashboard/client/requests" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Inbox size={16} /> My Requests
+                    </Link>
+                    <Link to="/dashboard/client/quotes" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                      <FileText size={16} /> My Quotes
+                    </Link>
+                    <Link to="/dashboard/client/orders" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                      <Package size={16} /> My Orders
                     </Link>
                     <Link to="/dashboard/client/profile" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <User size={16} /> My Profile

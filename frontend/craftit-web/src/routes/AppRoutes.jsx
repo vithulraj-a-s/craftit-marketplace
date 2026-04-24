@@ -22,12 +22,16 @@ import ClientProfileSettingsPage from '../pages/profile/ClientProfileSettingsPag
 
 import AppLayout from '../components/layout/AppLayout';
 import ArtistDashboard from '../pages/dashboard/ArtistDashboard';
-import ComingSoonPlaceholder from '../pages/dashboard/ComingSoonPlaceholder';
 import PortfolioPage from '../pages/dashboard/PortfolioPage';
 import SavedArtistsPage from '../pages/dashboard/SavedArtistsPage';
 import ClientRequestsPage from '../pages/dashboard/ClientRequestsPage';
 import ArtistRequestsPage from '../pages/dashboard/ArtistRequestsPage';
 import RequestDetailPage from '../pages/dashboard/RequestDetailPage';
+import ClientOrdersPage from '../pages/dashboard/ClientOrdersPage';
+import ArtistQuotesPage from '../pages/dashboard/ArtistQuotesPage';
+import ClientQuotesPage from '../pages/dashboard/ClientQuotesPage';
+import ArtistOrdersPage from '../pages/dashboard/ArtistOrdersPage';
+import OrderDetailPage from '../pages/dashboard/OrderDetailPage';
 
 // Protected Route
 const ProtectedRoute = ({ children }) => {
@@ -126,8 +130,9 @@ export default function AppRoutes() {
         <Route path="/dashboard/artist/requests" element={<ProtectedRoute><ArtistRequestsPage /></ProtectedRoute>} />
         <Route path="/dashboard/artist/requests/:id" element={<ProtectedRoute><RequestDetailPage /></ProtectedRoute>} />
 
-        <Route path="/dashboard/artist/quotes" element={<ProtectedRoute><ComingSoonPlaceholder title="Quotes" /></ProtectedRoute>} />
-        <Route path="/dashboard/artist/orders" element={<ProtectedRoute><ComingSoonPlaceholder title="Orders" /></ProtectedRoute>} />
+        <Route path="/dashboard/artist/quotes" element={<ProtectedRoute><ArtistQuotesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/artist/orders" element={<ProtectedRoute><ArtistOrdersPage /></ProtectedRoute>} />
+        <Route path="/dashboard/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
         
         <Route
           path="/complete-artist-profile"
@@ -183,6 +188,22 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <RequestDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/client/quotes"
+          element={
+            <ProtectedRoute>
+              <ClientQuotesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/client/orders"
+          element={
+            <ProtectedRoute>
+              <ClientOrdersPage />
             </ProtectedRoute>
           }
         />

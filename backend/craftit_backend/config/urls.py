@@ -26,4 +26,5 @@ urlpatterns = [
     path("api/portrait-requests/", include("portrait_requests.urls")),
     path("api/quotes/", include("quotes.urls")),
     path("api/orders/", include("orders.urls")),
+    path("api/payments/", include("payments.urls")),
 ]
