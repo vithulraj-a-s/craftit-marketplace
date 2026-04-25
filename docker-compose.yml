@@ -21,6 +21,29 @@ services:
     ports:
       - "6379:6379"
 
+  mongodb:
+    image: mongo:7
+    container_name: craftit_mongo_container
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - craftit_mongo_data:/data/db
+      
+  chat:
+    build:
+      context: ./chat-service
+    container_name: craftit_chat_container
+    restart: always
+    command: sh -c "sleep 5 && daphne -b 0.0.0.0 -p 8001 config.asgi:application"
+    volumes:
+      - ./chat-service:/app
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+      - mongodb
+
   backend:
     build:
       context: ./backend/craftit_backend
@@ -56,3 +79,4 @@ services:
 volumes:
   craftit_postgres_data:
     external: true
+  craftit_mongo_data:

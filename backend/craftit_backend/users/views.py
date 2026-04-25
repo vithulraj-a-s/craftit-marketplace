@@ -5,11 +5,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated,AllowAny
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, LogoutSerializer, VerifyOTPSerializer, ResendOTPSerializer, ForgotPasswordSerializer, ResetPasswordSerializer, VerifyResetOTPSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, VerifyOTPSerializer, ResendOTPSerializer, ForgotPasswordSerializer, ResetPasswordSerializer, VerifyResetOTPSerializer
 from config.core.services.otp_service import verify_otp,send_otp
 from config.core.services.password_service import send_reset_otp, verify_reset_otp
 from config.core.services.email_service import send_welcome_email
 from config.core.redis_client import redis_client
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Create your views here.
 
@@ -24,14 +26,77 @@ class RegisterView(generics.CreateAPIView):
         send_otp(user.email)
 
 
-class LoginView(APIView):
-    def post(self,request):
-        self.permission_classes = [AllowAny]
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        user = serializer.validated_data["user"]
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        response = Response({
+            "user": {
+                "email": user.email,
+                "role": user.role,
+                "is_verified": user.is_verified,
+            }
+        }, status=status.HTTP_200_OK)
+
+        # ✅ Set cookies
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,   # ⚠️ True in production
+            samesite="Lax",
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+        )
+
+        return response
+    
+class CookieTokenRefreshView(APIView):
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            raise AuthenticationFailed("No refresh token")
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+        except Exception:
+            raise AuthenticationFailed("Invalid refresh token")
+
+        response = Response({"message": "Token refreshed"})
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,   # True in production
+            samesite="Lax",
+        )
+
+        return response
     
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -41,16 +106,31 @@ class MeView(APIView):
 
         return Response(serializer.data)
     
-class logoutView(APIView):
+class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self,request):
-        serializer = LogoutSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refresh_token")
 
-        return Response({"detail":"logged out successfully","code":"logged out"})
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                pass  # ignore invalid token
+
+        response = Response({
+            "detail": "Logged out successfully",
+            "code": "logged_out"
+        })
+
+        # 🔥 Delete cookies
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+
+        return response
     
-class verifyOTPView(APIView):
+class VerifyOTPView(APIView):
     def post(self,request):
         serializer = VerifyOTPSerializer(data=request.data)
 

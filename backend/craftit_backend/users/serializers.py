@@ -87,18 +87,23 @@ class LoginSerializer(serializers.Serializer):
 
         user.save(update_fields=["last_login"])
 
-        refresh = RefreshToken.for_user(user)
+        # updated edited part for adding cookies
+        #-----------------------------------------
+        return {"user": user}
 
+        #old part when we used to store token in local storage
 
-        return {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": {
-                "email": user.email,
-                "role":user.role,
-                "is_verified": user.is_verified,
-            }
-        }
+        # refresh = RefreshToken.for_user(user)
+
+        # return {
+        #     "access": str(refresh.access_token),
+        #     "refresh": str(refresh),
+        #     "user": {
+        #         "email": user.email,
+        #         "role":user.role,
+        #         "is_verified": user.is_verified,
+        #     }
+        # }
     
 
 class UserSerializer(serializers.ModelSerializer):
@@ -108,21 +113,21 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["email","role","is_verified"]
 
 
-class LogoutSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
+# class LogoutSerializer(serializers.Serializer):
+#     refresh = serializers.CharField()
 
-    def validate(self, attrs):
-        refresh_token = attrs["refresh"]
+#     def validate(self, attrs):
+#         refresh_token = attrs["refresh"]
 
-        try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-        except Exception:
-            raise serializers.ValidationError({
-                        "detail": "Invalid or expired token",
-                        "code": "token_expired"
-                    })
-        return attrs
+#         try:
+#             token = RefreshToken(refresh_token)
+#             token.blacklist()
+#         except Exception:
+#             raise serializers.ValidationError({
+#                         "detail": "Invalid or expired token",
+#                         "code": "token_expired"
+#                     })
+#         return attrs
 
 
 
