@@ -15,12 +15,13 @@ from profiles.serializers import (ArtistProfileListSerializer,
                                     ClientProfileCreateSerializer)
 from profiles.filters import ArtistProfileFilter
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from profiles.permissions import IsArtist, IsClient
 from .pagination import ArtistPagination
 
 
 class ArtistListView(APIView):
+    permission_classes = [AllowAny]
     filter_backends = [
         DjangoFilterBackend(),
         filters.SearchFilter(),
@@ -56,6 +57,7 @@ class ArtistListView(APIView):
         return paginator.get_paginated_response(serializer.data)    
 
 class ArtistDetailView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, slug):
         try:
             artist = ArtistProfile.objects.select_related("user").get(slug=slug)

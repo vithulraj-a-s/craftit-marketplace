@@ -13,9 +13,9 @@ from config.core.redis_client import redis_client
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
-# Create your views here.
 
 class RegisterView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
     queryset = User.objects.all()
 
     serializer_class = RegisterSerializer
@@ -26,11 +26,6 @@ class RegisterView(generics.CreateAPIView):
         send_otp(user.email)
 
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class LoginView(APIView):
@@ -74,6 +69,7 @@ class LoginView(APIView):
         return response
     
 class CookieTokenRefreshView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         refresh_token = request.COOKIES.get("refresh_token")
 
@@ -131,6 +127,8 @@ class LogoutView(APIView):
         return response
     
 class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self,request):
         serializer = VerifyOTPSerializer(data=request.data)
 
@@ -179,6 +177,7 @@ class VerifyOTPView(APIView):
 
 
 class ResendOTPView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = ResendOTPSerializer(data=request.data)
 
@@ -205,6 +204,7 @@ class ResendOTPView(APIView):
         return Response({"detail": "OTP resent","code":"otp resent"}, status=status.HTTP_200_OK)
     
 class ForgetPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self,request):
         serializer = ForgotPasswordSerializer(data=request.data)
 
@@ -224,6 +224,7 @@ class ForgetPasswordView(APIView):
     
 
 class VerifyResetOTPView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = VerifyResetOTPSerializer(data=request.data)
 
@@ -241,6 +242,7 @@ class VerifyResetOTPView(APIView):
         return Response(message, status=status.HTTP_200_OK)
     
 class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
 

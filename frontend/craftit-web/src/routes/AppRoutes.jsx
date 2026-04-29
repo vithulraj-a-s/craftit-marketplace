@@ -37,6 +37,19 @@ import OrderDetailPage from '../pages/dashboard/OrderDetailPage';
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
+//   if (user) { # you can remove this lock of commented code if you need 
+//   if (user.role === "ARTIST") {
+//     return <Navigate to="/artist/dashboard" replace />;
+//   }
+
+//   if (user.role === "CLIENT") {
+//     return <Navigate to="/dashboard" replace />;
+//   }
+
+//   // fallback (in case something unexpected comes)
+//   return <Navigate to="/" replace />;
+// }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

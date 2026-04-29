@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import axiosInstance from "../services/axiosInstance";
 import {
   loginUser,
   getCurrentUser,
@@ -16,50 +17,40 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem("access");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+      const initAuth = async () => {
+        try {
+          const response = await axiosInstance.get("/auth/me/", { _retry: true });
+          setUser(response.data);
+        } catch (err) {
+          // 🔥 IMPORTANT: DO NOT TRIGGER ANYTHING HERE
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-      try {
-        const userData = await getCurrentUser();
-        setUser(userData);
-      } catch (err) {
-        console.error("Session expired", err);
-        localStorage.clear();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
+      initAuth();
+    }, []);
 
   const login = async (email, password) => {
-    const res = await loginUser({ email, password });
+    await loginUser({ email, password });
 
-    localStorage.setItem("access", res.access);
-    localStorage.setItem("refresh", res.refresh);
+    // 🔥 get user AFTER cookies are set
+    const userData = await getCurrentUser();
+    setUser(userData);
 
-    setUser(res.user);
-
-    return res.user;
+    return userData;
   };
 
   const logout = async () => {
-    const refresh = localStorage.getItem("refresh");
+  try {
+    await logoutUser(); // 🔥 no body
+  } catch (err) {
+    console.log("Logout error", err);
+  }
 
-    try {
-      await logoutUser({ refresh });
-    } catch (err) {
-      console.log("Logout error", err);
-    }
-
-    localStorage.clear();
-    setUser(null);
-  };
+  setUser(null);
+};
 
   const value = {
     user,

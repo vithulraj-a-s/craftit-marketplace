@@ -45,8 +45,8 @@ export default function Login() {
         return;
       }
 
-      if (user.role === "artist") {
-        navigate("/dashboard");
+      if (user.role === "ARTIST") {
+        navigate("/artist/dashboard");
       } else {
         navigate("/dashboard");
       }

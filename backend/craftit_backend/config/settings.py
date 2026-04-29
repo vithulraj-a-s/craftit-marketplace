@@ -71,10 +71,25 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+id="cors_origin"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 CORS_ALLOW_ALL_ORIGINS = True # only for development !
+
+
+# for allow cookies from backend
+id="cors_credentials"
+CORS_ALLOW_CREDENTIALS = True
+
+
+# this following 5 lines are for development only 
+id="cookie_settings"
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+#-------------------------------------
 
 ROOT_URLCONF = 'config.urls'
 
@@ -120,7 +135,7 @@ REST_FRAMEWORK = {
         "users.authentication.CookieJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES":(
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ),
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",

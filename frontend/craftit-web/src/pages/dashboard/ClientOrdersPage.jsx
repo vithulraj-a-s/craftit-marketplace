@@ -12,74 +12,84 @@ export default function ClientOrdersPage() {
   const [paymentLoadingId, setPaymentLoadingId] = useState(null);
 
   const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const data = await getClientOrders();
-      setOrders(data);
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load orders.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const data = await getClientOrders();
+    setOrders(data);
+    setError(null);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to load orders.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  useEffect(() => {
+useEffect(() => {
     fetchOrders();
   }, []);
 
-  const handlePayNow = async (orderId) => {
-    setPaymentLoadingId(orderId);
-    try {
-      const paymentData = await createPayment(orderId);
-      
-      const options = {
-        key: paymentData.key,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        order_id: paymentData.razorpay_order_id,
-        name: "Craftit",
-        description: "Portrait Commission Payment",
-        handler: async function (paymentResponse) {
-          try {
-            await verifyPayment(paymentResponse);
-            alert('Payment successful!');
-            await fetchOrders();
-          } catch (err) {
-            console.error("Verification failed", err);
-            alert('Payment verification failed. Please contact support.');
-          }
-        },
-        prefill: {
-          name: "",
-          email: "",
-          contact: ""
-        },
-        theme: {
-          color: "#4f46e5"
-        },
-        modal: {
-          ondismiss: function() {
-            setPaymentLoadingId(null);
-          }
+// 🔥 move handler out to stabilize reference
+const handlePaymentSuccess = async (paymentResponse) => {
+  try {
+    await verifyPayment(paymentResponse);
+    alert("Payment successful!");
+
+    // 🔥 call fetch AFTER a micro delay (prevents render cascade issues)
+    setTimeout(() => {
+      fetchOrders();
+    }, 0);
+
+  } catch (err) {
+    console.error("Verification failed", err);
+    alert("Payment verification failed. Please contact support.");
+  }
+};
+
+const handlePayNow = async (orderId) => {
+  setPaymentLoadingId(orderId);
+
+  try {
+    const paymentData = await createPayment(orderId);
+
+    const options = {
+      key: paymentData.key,
+      amount: paymentData.amount,
+      currency: paymentData.currency,
+      order_id: paymentData.razorpay_order_id,
+      name: "Craftit",
+      description: "Portrait Commission Payment",
+      handler: handlePaymentSuccess, // 🔥 stable reference
+      prefill: {
+        name: "",
+        email: "",
+        contact: ""
+      },
+      theme: {
+        color: "#4f46e5"
+      },
+      modal: {
+        ondismiss: function () {
+          setPaymentLoadingId(null);
         }
-      };
-      
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response){
-        alert(`Payment Failed: ${response.error.description}`);
-        setPaymentLoadingId(null);
-      });
-      rzp.open();
+      }
+    };
 
-    } catch (err) {
-      console.error(err);
-      alert('Failed to initiate payment. Please try again.');
+    const rzp = new window.Razorpay(options);
+
+    rzp.on("payment.failed", function (response) {
+      alert(`Payment Failed: ${response.error.description}`);
       setPaymentLoadingId(null);
-    }
-  };
+    });
 
+    rzp.open();
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to initiate payment. Please try again.");
+    setPaymentLoadingId(null);
+  }
+};
   const getStatusDisplay = (status) => {
     switch (status) {
       case 'pending_payment':

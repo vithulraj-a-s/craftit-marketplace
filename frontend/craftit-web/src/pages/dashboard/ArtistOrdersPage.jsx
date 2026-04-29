@@ -201,7 +201,7 @@ export default function ArtistOrdersPage() {
                         </button>
                         
                         {uploadedFile && (
-                          <span className="text-sm text-gray-600 font-medium truncate max-w-[200px]">
+                          <span className="text-sm text-gray-600 font-medium truncate max-w-50">
                             {uploadedFile.name}
                           </span>
                         )}
