@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
 import { Loader } from '../../components/ui/Loader';
 import { IndianRupee, Clock, CheckCircle, MessageCircle, AlertCircle, Package } from 'lucide-react';
@@ -9,6 +9,12 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const navigate = useNavigate();
+
+  const handleChatClick = (orderId) => {
+    navigate(`/chat/${orderId}`);
+  };
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -175,18 +181,18 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Actions */}
-          {order.status === 'in_progress' && (
+          {order.status?.toUpperCase() === 'IN_PROGRESS' && (
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">
                 Actions
               </h2>
-              <Link 
-                to={`/dashboard/chat/${order.id}`}
+              <button 
+                onClick={() => handleChatClick(order.id)}
                 className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
               >
                 <MessageCircle size={20} />
                 Chat with Artist
-              </Link>
+              </button>
             </div>
           )}
         </div>

@@ -4,10 +4,14 @@ from .mongodb import get_messages_collection
 from datetime import datetime
 import json
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.user = self.scope["user"]
+        print("CONNECT USER:", self.scope.get("user"))
 
         # if self.user.is_anonymous:
         #     print("Unauthorized connection")
@@ -34,6 +38,12 @@ class ChatConsumer(WebsocketConsumer):
             print(f"[DISCONNECT] User {self.user.id} left {self.room_group_name}")
 
     def receive(self, text_data):
+        logger.info(f"🔥 RECEIVE CALLED")
+        logger.info(f"USER: {self.scope.get('user')}")
+        logger.info(f"AUTH: {getattr(self.scope.get('user'), 'is_authenticated', None)}")
+        logger.info(f"ROLE: {getattr(self.scope.get('user'), 'role', None)}")
+        logger.info(f"ID: {getattr(self.scope.get('user'), 'id', None)}")
+        
         try:
             data = json.loads(text_data)
         except json.JSONDecodeError:

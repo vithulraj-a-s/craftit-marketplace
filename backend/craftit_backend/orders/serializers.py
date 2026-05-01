@@ -34,6 +34,45 @@ class OrderListSerializer(serializers.ModelSerializer):
         return obj.client_profile.full_name
     
 
+# class OrderDetailSerializer(serializers.ModelSerializer):
+#     request_title = serializers.CharField(
+#         source="quote.portrait_request.title",
+#         read_only=True,
+#     )
+#     request_description = serializers.CharField(
+#         source="quote.portrait_request.description",
+#         read_only=True,
+#     )
+#     portrait_style = serializers.CharField(
+#         source="quote.portrait_request.portrait_style",
+#         read_only=True,
+#     )
+#     quote_amount = serializers.DecimalField(
+#         source="quote.amount",
+#         max_digits=10,
+#         decimal_places=2,
+#         read_only=True,
+#     )
+#     delivery_days = serializers.IntegerField(
+#         source="quote.delivery_days",
+#         read_only=True,
+#     )
+
+#     class Meta:
+#         model = Order
+#         fields = [
+#             "id",
+#             "request_title",
+#             "request_description",
+#             "portrait_style",
+#             "quote_amount",
+#             "delivery_days",
+#             "status",
+#             "final_image",
+#             "created_at",
+#             "completed_at",
+#         ]
+
 class OrderDetailSerializer(serializers.ModelSerializer):
     request_title = serializers.CharField(
         source="quote.portrait_request.title",
@@ -58,6 +97,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    # ✅ FIXED
+    client = serializers.SerializerMethodField()
+    artist = serializers.SerializerMethodField()
+
     class Meta:
         model = Order
         fields = [
@@ -71,7 +114,23 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "final_image",
             "created_at",
             "completed_at",
+            "client",
+            "artist",
         ]
+
+    def get_client(self, obj):
+        client = obj.client_profile
+        return {
+            "full_name": client.full_name,
+            "email": client.user.email,
+        }
+
+    def get_artist(self, obj):
+        artist = obj.artist_profile
+        return {
+            "display_name": artist.display_name,
+            "email": artist.user.email,
+        }
 
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):

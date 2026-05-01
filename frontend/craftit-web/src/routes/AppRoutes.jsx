@@ -32,6 +32,7 @@ import ArtistQuotesPage from '../pages/dashboard/ArtistQuotesPage';
 import ClientQuotesPage from '../pages/dashboard/ClientQuotesPage';
 import ArtistOrdersPage from '../pages/dashboard/ArtistOrdersPage';
 import OrderDetailPage from '../pages/dashboard/OrderDetailPage';
+import ChatPage from '../pages/chat/ChatPage';
 
 // Protected Route
 const ProtectedRoute = ({ children }) => {
@@ -224,6 +225,15 @@ export default function AppRoutes() {
         <Route path="/artists" element={<ArtistsPage />} />
         <Route path="/artists/:slug" element={<ArtistDetailPage />} />
       </Route>
+
+      <Route 
+        path="/chat/:orderId" 
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        } 
+      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
 

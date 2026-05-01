@@ -3,13 +3,19 @@ import { getClientOrders } from '../../services/orderService';
 import { createPayment, verifyPayment } from '../../services/paymentService';
 import { Loader } from '../../components/ui/Loader';
 import { Package, IndianRupee, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function ClientOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [paymentLoadingId, setPaymentLoadingId] = useState(null);
+  
+  const navigate = useNavigate();
+
+  const handleChatClick = (orderId) => {
+    navigate(`/chat/${orderId}`);
+  };
 
   const fetchOrders = async () => {
   try {
@@ -217,10 +223,13 @@ const handlePayNow = async (orderId) => {
                           Pay Now
                         </button>
                       )}
-                      {order.status === 'in_progress' && (
-                         <Link to={`/dashboard/chat/${order.id}`} className="w-full sm:w-auto px-6 py-3 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl border-2 border-indigo-100 transition-colors text-center inline-block">
+                      {order.status?.toUpperCase() === 'IN_PROGRESS' && (
+                         <button 
+                           onClick={() => handleChatClick(order.id)} 
+                           className="w-full sm:w-auto px-6 py-3 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl border-2 border-indigo-100 transition-colors text-center inline-block"
+                         >
                            Chat
-                         </Link>
+                         </button>
                       )}
                       {(order.status === 'completed' || order.status === 'delivered') && (
                         <span className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-500 font-bold rounded-xl cursor-not-allowed text-center inline-block">
