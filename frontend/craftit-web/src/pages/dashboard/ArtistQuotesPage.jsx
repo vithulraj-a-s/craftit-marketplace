@@ -111,8 +111,8 @@ export default function ArtistQuotesPage() {
                   <div className="flex-1">
                     <div className="mb-4">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Request Details</p>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{quote.portrait_request?.title || 'Unknown Request'}</h3>
-                      <p className="text-gray-500 font-medium">Client: <span className="text-gray-900">{quote.client?.display_name || 'Unknown Client'}</span></p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{quote.client.title || 'Unknown Request'}</h3>
+                      <p className="text-gray-500 font-medium">Client: <span className="text-gray-900">{quote.client?.full_name || 'Unknown Client'}</span></p>
                     </div>
 
                     {quote.message && (

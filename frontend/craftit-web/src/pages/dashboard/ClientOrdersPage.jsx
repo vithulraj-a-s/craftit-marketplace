@@ -4,13 +4,16 @@ import { createPayment, verifyPayment } from '../../services/paymentService';
 import { Loader } from '../../components/ui/Loader';
 import { Package, IndianRupee, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ClientOrdersPage() {
   const [orders, setOrders] = useState([]);
+  const [unreadMap, setUnreadMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [paymentLoadingId, setPaymentLoadingId] = useState(null);
   
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleChatClick = (orderId) => {
@@ -31,9 +34,27 @@ export default function ClientOrdersPage() {
   }
 };
 
+const fetchUnreadCounts = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const map = {};
+        data.forEach(item => {
+          map[item.conversation_id] = item.unread_count;
+        });
+        setUnreadMap(map);
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread counts", err);
+    }
+  };
+
 useEffect(() => {
     fetchOrders();
-  }, []);
+    fetchUnreadCounts();
+  }, [user]);
 
 // 🔥 move handler out to stabilize reference
 const handlePaymentSuccess = async (paymentResponse) => {
@@ -181,6 +202,7 @@ const handlePayNow = async (orderId) => {
         <div className="grid grid-cols-1 gap-6">
           {orders.map((order) => {
             const statusConfig = getStatusDisplay(order.status);
+            const unread = unreadMap[order.id] || unreadMap[String(order.id)] || 0;
             return (
               <div key={order.id} className="bg-white border text-left border-gray-200 rounded-3xl shadow-sm overflow-hidden flex flex-col md:flex-row transition-all hover:shadow-md">
                 <div className={`p-6 md:w-64 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-r border-gray-100 ${statusConfig.bg}`}>
@@ -226,9 +248,14 @@ const handlePayNow = async (orderId) => {
                       {order.status?.toUpperCase() === 'IN_PROGRESS' && (
                          <button 
                            onClick={() => handleChatClick(order.id)} 
-                           className="w-full sm:w-auto px-6 py-3 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl border-2 border-indigo-100 transition-colors text-center inline-block"
+                           className="relative w-full sm:w-auto px-6 py-3 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl border-2 border-indigo-100 transition-colors text-center inline-block"
                          >
                            Chat
+                           {unread > 0 && (
+                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                               {unread}
+                             </span>
+                           )}
                          </button>
                       )}
                       {(order.status === 'completed' || order.status === 'delivered') && (

@@ -34,6 +34,17 @@ import ArtistOrdersPage from '../pages/dashboard/ArtistOrdersPage';
 import OrderDetailPage from '../pages/dashboard/OrderDetailPage';
 import ChatPage from '../pages/chat/ChatPage';
 
+import AdminLayout from '../components/admin/AdminLayout';
+import AdminRoute from '../components/admin/AdminRoute';
+import PermissionRoute from '../components/admin/PermissionRoute';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import UnauthorizedPage from '../pages/admin/UnauthorizedPage';
+import StaffManagementPage from '../pages/admin/StaffManagementPage';
+import UsersManagementPage from '../pages/admin/UsersManagementPage';
+import OrdersManagementPage from '../pages/admin/OrdersManagementPage';
+import RequestsManagementPage from '../pages/admin/RequestsManagementPage';
+import { PERMISSIONS } from '../lib/permissions';
+
 // Protected Route
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -234,6 +245,23 @@ export default function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="staff" element={<PermissionRoute requiredPermission={PERMISSIONS.MANAGE_STAFF}><StaffManagementPage /></PermissionRoute>} />
+        <Route path="users" element={<PermissionRoute requiredPermission={PERMISSIONS.MANAGE_USERS}><UsersManagementPage /></PermissionRoute>} />
+        <Route path="orders" element={<PermissionRoute requiredPermission={PERMISSIONS.MANAGE_ORDERS}><OrdersManagementPage /></PermissionRoute>} />
+        <Route path="requests" element={<PermissionRoute requiredPermission={PERMISSIONS.MANAGE_REQUESTS}><RequestsManagementPage /></PermissionRoute>} />
+        <Route path="unauthorized" element={<UnauthorizedPage />} />
+        <Route path="" element={<Navigate to="dashboard" replace />} />
+      </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
 

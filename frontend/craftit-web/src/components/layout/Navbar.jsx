@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, LayoutDashboard, User, Users, Palette, Bookmark, Inbox, Package, FileText } from 'lucide-react';
@@ -6,6 +6,35 @@ import { LogOut, LayoutDashboard, User, Users, Palette, Bookmark, Inbox, Package
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [unreadMap, setUnreadMap] = useState({});
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchUnreadCounts = async () => {
+      try {
+        const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          const map = {};
+          data.forEach(item => {
+            map[item.conversation_id] = item.unread_count;
+          });
+          setUnreadMap(map);
+        }
+      } catch (err) {
+        console.error("Failed to fetch unread counts", err);
+      }
+    };
+    fetchUnreadCounts();
+    
+    const handleFocus = () => {
+      fetchUnreadCounts();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user]);
+
+  const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 
   const handleLogout = async () => {
     await logout();
@@ -40,8 +69,13 @@ export default function Navbar() {
                     <Link to="/dashboard/artist/quotes" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <FileText size={16} /> Quotes
                     </Link>
-                    <Link to="/dashboard/artist/orders" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                    <Link to="/dashboard/artist/orders" className="relative text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Package size={16} /> Orders
+                      {totalUnread > 0 && (
+                        <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
+                          {totalUnread}
+                        </span>
+                      )}
                     </Link>
                     <Link to="/dashboard/artist/profile" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <User size={16} /> My Profile
@@ -63,8 +97,13 @@ export default function Navbar() {
                     <Link to="/dashboard/client/quotes" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <FileText size={16} /> My Quotes
                     </Link>
-                    <Link to="/dashboard/client/orders" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                    <Link to="/dashboard/client/orders" className="relative text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Package size={16} /> My Orders
+                      {totalUnread > 0 && (
+                        <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
+                          {totalUnread}
+                        </span>
+                      )}
                     </Link>
                     <Link to="/dashboard/client/profile" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <User size={16} /> My Profile

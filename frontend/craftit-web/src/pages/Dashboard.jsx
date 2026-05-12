@@ -14,28 +14,44 @@ export default function Dashboard() {
     if (!user) return;
 
     const checkProfile = async () => {
+
       try {
+        if (user.is_staff) {
+          navigate('/admin/dashboard', {replace: true});
+          return;
+        }
+
         if (user.role === 'artist' || user.role === 'ARTIST') {
           await getCurrentArtist();
-          navigate('/dashboard/artist', { replace: true });
-        } else {
-          await getCurrentClient();
-          navigate('/artists', { replace: true });
+          navigate('/dashboard/artist', {replace: true});
+          return;
         }
+
+        if (user.role === 'client' || user.role === 'CLIENT') {
+          await getCurrentClient();
+          navigate('/artists', {replace: true});
+          return;
+        }
+
       } catch (err) {
+
         if (err?.response?.status === 404) {
           if (user.role === 'artist' || user.role === 'ARTIST') {
-            navigate('/complete-artist-profile', { replace: true });
-          } else {
+            navigate('/complete-artist-profile', { replace: true }
+            );
+
+          } else if (user.role === 'client' || user.role === 'CLIENT') {
             navigate('/complete-client-profile', { replace: true });
           }
         }
+
       } finally {
         setChecking(false);
       }
     };
-    
+
     checkProfile();
+
   }, [user, navigate]);
 
   return (

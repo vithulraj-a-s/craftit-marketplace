@@ -4,6 +4,7 @@ from orders.views import (
     ArtistOrderListView,
     OrderDetailView,
     OrderStatusUpdateView,
+    ArtistDashboardView
 )
 
 urlpatterns = [
@@ -11,4 +12,6 @@ urlpatterns = [
     path("artist/", ArtistOrderListView.as_view()),
     path("<int:pk>/", OrderDetailView.as_view()),
     path("<int:pk>/status/", OrderStatusUpdateView.as_view()),
+    path("dashboard/artist/", ArtistDashboardView.as_view(), name="artist-dashboard"),
+   
 ]

@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'quotes',    
     'orders',
     'payments',
+    'chat',
+    'dashboard',
 
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',

@@ -97,7 +97,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    # ✅ FIXED
+ 
     client = serializers.SerializerMethodField()
     artist = serializers.SerializerMethodField()
 
@@ -187,3 +187,12 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
 
         return attrs
     
+
+
+# serializer for dashboard
+class ArtistDashboardSerializer(serializers.Serializer):
+    overview = serializers.DictField()
+    earnings_chart = serializers.ListField()
+    orders_distribution = serializers.DictField()
+    portrait_requests = serializers.DictField()
+    recent_activity = serializers.ListField()

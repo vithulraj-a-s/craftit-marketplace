@@ -2,9 +2,10 @@ from channels.middleware import BaseMiddleware
 from jwt import decode as jwt_decode
 from jwt import ExpiredSignatureError, InvalidTokenError
 from django.conf import settings
+from http.cookies import SimpleCookie
 
 
-# ✅ Simple user object (NO DB)
+# 🔥 Simple lightweight user (NO DB call)
 class SimpleUser:
     def __init__(self, user_id, role):
         self.id = user_id
@@ -17,73 +18,75 @@ class SimpleUser:
 
 class JWTAuthMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
-        from django.contrib.auth.models import AnonymousUser
 
         try:
             headers = dict(scope.get("headers", []))
-            raw_cookies = headers.get(b"cookie", b"").decode()
 
-            print("🔥 COOKIES RAW:", raw_cookies, flush=True)
+            # 🔥 Extract cookies
+            raw_cookie = headers.get(b"cookie", b"").decode()
+            print("🍪 RAW COOKIE:", raw_cookie)
 
-            # 🔹 Parse cookies
-            cookie_dict = {}
-            for item in raw_cookies.split(";"):
-                if "=" in item:
-                    key, value = item.strip().split("=", 1)
-                    cookie_dict[key] = value
+            cookie = SimpleCookie()
+            cookie.load(raw_cookie)
 
-            token = cookie_dict.get("access_token")
+            token = None
+
+            # 🔥 IMPORTANT: match your actual cookie name
+            if "access_token" in cookie:
+                token = cookie["access_token"].value
+
+            print("🔐 TOKEN:", token)
 
             if not token:
-                print("⚠️ NO ACCESS TOKEN", flush=True)
-                scope["user"] = AnonymousUser()
+                print("❌ No token found")
+                scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            # 🔹 Decode JWT
+            # 🔥 Decode JWT
             try:
                 decoded = jwt_decode(
                     token,
                     settings.SECRET_KEY,
                     algorithms=["HS256"]
                 )
-                print("✅ TOKEN DECODED:", decoded, flush=True)
+                print("✅ DECODED:", decoded)
 
             except ExpiredSignatureError:
-                print("🔥 JWT ERROR: Token expired", flush=True)
-                scope["user"] = AnonymousUser()
+                print("❌ Token expired")
+                scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            except InvalidTokenError as e:
-                print(f"🔥 JWT ERROR: {str(e)}", flush=True)
-                scope["user"] = AnonymousUser()
+            except InvalidTokenError:
+                print("❌ Invalid token")
+                scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            # 🔹 Extract data
+            # 🔥 Extract user info
             user_id = decoded.get("user_id")
             role = decoded.get("role")
 
             if not user_id:
-                print("🔥 JWT ERROR: user_id missing", flush=True)
-                scope["user"] = AnonymousUser()
+                print("❌ No user_id in token")
+                scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
             try:
                 user_id = int(user_id)
             except Exception:
-                print(f"🔥 JWT ERROR: invalid user_id → {user_id}", flush=True)
-                scope["user"] = AnonymousUser()
+                print("❌ user_id not valid")
+                scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            # 🔥 FINAL USER ASSIGNMENT (NO DB)
+            # 🔥 Assign user
             scope["user"] = SimpleUser(
                 user_id=user_id,
                 role=role or "client"
             )
 
-            print(f"✅ AUTH USER: {scope['user']}", flush=True)
+            print("👤 USER SET:", scope["user"])
 
         except Exception as e:
-            print(f"🔥 MIDDLEWARE CRASH: {str(e)}", flush=True)
-            scope["user"] = AnonymousUser()
+            print("❌ Middleware Exception:", str(e))
+            scope["user"] = None
 
         return await super().__call__(scope, receive, send)

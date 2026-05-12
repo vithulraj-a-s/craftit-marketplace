@@ -3,16 +3,20 @@ import { getArtistOrders, updateOrderStatus } from '../../services/orderService'
 import { Loader } from '../../components/ui/Loader';
 import { Package, IndianRupee, Image as ImageIcon, CheckCircle, AlertCircle, UploadCloud } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ArtistOrdersPage() {
   const [orders, setOrders] = useState([]);
+  const [unreadMap, setUnreadMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [uploadFiles, setUploadFiles] = useState({});
   const fileInputRefs = useRef({});
   
+  const { user } = useAuth();
   const navigate = useNavigate();
+  console.log("AUTH USER:", user);
 
   const handleChatClick = (orderId) => {
     navigate(`/chat/${orderId}`);
@@ -32,15 +36,38 @@ export default function ArtistOrdersPage() {
     }
   };
 
+  const fetchUnreadCounts = async () => {
+    console.log("AUTH USER:", user);
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+
+        console.log("UNREAD API DATA",data);
+        const map = {};
+        data.forEach(item => {
+          map[item.conversation_id] = item.unread_count;
+        });
+        console.log("UNREAD MAP",map);
+        setUnreadMap(map);
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread counts", err);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
+    fetchUnreadCounts();
     
     const handleFocus = () => {
       fetchOrders();
+      fetchUnreadCounts();
     };
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [user?.id]);
 
   const handleFileChange = (orderId, e) => {
     const file = e.target.files[0];
@@ -161,6 +188,7 @@ export default function ArtistOrdersPage() {
           {orders.map((order) => {
             const statusConfig = getStatusDisplay(order.status);
             const uploadedFile = uploadFiles[order.id];
+            const unread = unreadMap[order.id] || unreadMap[String(order.id)] || 0;
 
             return (
               <div key={order.id} className="bg-white border text-left border-gray-200 rounded-3xl shadow-sm overflow-hidden flex flex-col md:flex-row transition-all hover:shadow-md">
@@ -243,9 +271,14 @@ export default function ArtistOrdersPage() {
                       {order.status?.toUpperCase() === 'IN_PROGRESS' && (
                         <button 
                           onClick={() => handleChatClick(order.id)} 
-                          className="w-full sm:w-auto px-6 py-2.5 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl border-2 border-indigo-100 transition-colors text-center inline-block"
+                          className="relative w-full sm:w-auto px-6 py-2.5 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl border-2 border-indigo-100 transition-colors text-center inline-block"
                         >
                           Chat
+                          {unread > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                              {unread}
+                            </span>
+                          )}
                         </button>
                       )}
                       {(order.status === 'completed' || order.status === 'delivered') && (

@@ -17,6 +17,7 @@ const ChatPage = () => {
   
   const [orderData, setOrderData] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
   const wsRef = useRef(null);
 
   // A) Fetch Order Details
@@ -82,6 +83,23 @@ const ChatPage = () => {
     };
   }, [orderId]);
 
+  // Mark as Read
+  useEffect(() => {
+    if (!orderId || !user) return;
+
+    const markAsRead = async () => {
+      try {
+        await axios.post(`${CHAT_BASE_URL}/chat/mark-as-read/${orderId}/`, {
+          user_id: user.id
+        });
+      } catch (error) {
+        console.error('Failed to mark chat as read:', error);
+      }
+    };
+
+    markAsRead();
+  }, [orderId, user]);
+
   // C) WebSocket Connection
   useEffect(() => {
     if (!orderId) return;
@@ -93,18 +111,41 @@ const ChatPage = () => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
-        // Unwrap message if backend encapsulates it
-        const msgToAppend = data.message && typeof data.message === 'object' && data.message.sender_role ? data.message : data;
 
-        setMessages((prevMessages) => {
-          // Prevent duplicates using _id or id
-          const msgId = msgToAppend._id || msgToAppend.id;
-          if (msgId && prevMessages.some(m => (m._id === msgId || m.id === msgId))) {
-            return prevMessages;
+        console.log("WS EVENT:", data);
+
+        if (data.type === "typing") {
+          if (data.sender_id && data.sender_id !== user?.id) {
+            setIsTyping(true);
           }
-          return [...prevMessages, msgToAppend];
-        });
+          return;
+        }
+
+        if (data.type === "stop_typing") {
+          if (data.sender_id && data.sender_id !== user?.id) {
+            setIsTyping(false);
+          }
+          return;
+        }
+
+        if (data.type === "chat_message") {
+          const msg = data.data;
+
+          setMessages((prevMessages) => {
+            if (prevMessages.some(m => m._id === msg._id)) {
+              return prevMessages;
+            }
+            return [...prevMessages, msg];
+          });
+        }
+
+        if (data.type === "unread_update") {
+          console.log("UNREAD EVENT:", data);
+          // IMPORTANT:
+          // If user is already inside this chat,
+          // DO NOTHING (ignore the event)
+        }
+
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
       }
@@ -121,11 +162,10 @@ const ChatPage = () => {
     };
   }, [orderId]);
 
-  const handleSendMessage = (content) => {
+  const handleSendMessage = (payload) => {
+    console.log("Payload: ", payload);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        message: content
-      }));
+      wsRef.current.send(JSON.stringify(payload));
     } else {
       console.error('WebSocket is not connected');
     }
@@ -160,6 +200,16 @@ const ChatPage = () => {
         messages={messages} 
         currentUserRole={currentUserRole}
       />
+      
+      <div className={`transition-all duration-300 ease-in-out bg-gray-50 overflow-hidden px-6 ${isTyping ? 'h-16 opacity-100 pb-4' : 'h-0 opacity-0 pb-0'}`}>
+        <div className="max-w-4xl mx-auto w-full flex items-end h-full">
+          <div className="bg-gray-200 rounded-2xl rounded-bl-sm px-4 py-2.5 flex items-center justify-center gap-1.5 shadow-sm w-fit">
+            <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+            <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+            <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+          </div>
+        </div>
+      </div>
       
       <ChatInput 
         onSendMessage={handleSendMessage} 

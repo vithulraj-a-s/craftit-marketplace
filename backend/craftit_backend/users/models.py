@@ -7,13 +7,12 @@ from .managers import UserManager
 class User(AbstractBaseUser,PermissionsMixin):
     ROLE_CHOICES = (
         ("ARTIST","Artist"),
-        ("CLIENT","Client"),
-        ("ADMIN","Admin"),
+        ("CLIENT","Client")
     )
 
     email = models.EmailField(unique=True)
 
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, blank=True, null=True)
 
     is_verified = models.BooleanField(default=False)
 

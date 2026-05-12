@@ -17,3 +17,7 @@ def get_mongo_db():
 def get_messages_collection():
     db = get_mongo_db()
     return db["messages"]
+
+def get_participants_collection():
+    db = get_mongo_db()
+    return db["conversation_participants"]

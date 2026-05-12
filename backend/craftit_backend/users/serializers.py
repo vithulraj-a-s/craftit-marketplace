@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User
+from dashboard.models import StaffProfile
     
 from rest_framework.exceptions import AuthenticationFailed
 from django.utils import timezone
@@ -8,6 +9,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from config.core.redis_client import redis_client
 from config.core.services.otp_service import MAX_LOGIN_ATTEMPTS, LOGIN_ATTEMPT_EXPIRY
 
+from dashboard.permissions.utils import (
+    get_user_permissions
+)
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -106,11 +110,106 @@ class LoginSerializer(serializers.Serializer):
         # }
     
 
+
 class UserSerializer(serializers.ModelSerializer):
 
+    staff_profile = serializers.SerializerMethodField()
+
     class Meta:
+
         model = User
-        fields = ["email","role","is_verified"]
+
+        fields = [
+            "id",
+            "email",
+            "role",
+            "is_verified",
+            "is_staff",
+            "staff_profile",
+        ]
+
+    def get_staff_profile(self, obj):
+
+        if not obj.is_staff:
+            return None
+
+        try:
+
+            staff_profile = obj.staff_profile
+
+            return {
+
+                "role":
+                    staff_profile.role,
+
+                "job_title":
+                    staff_profile.job_title,
+
+                "department":
+                    staff_profile.department,
+
+                "phone_number":
+                    staff_profile.phone_number,
+
+                "is_active_staff":
+                    staff_profile.is_active_staff,
+
+                "permissions":
+                    list(
+                        get_user_permissions(obj)
+                    ),
+            }
+
+        except StaffProfile.DoesNotExist:
+
+            return None
+
+
+
+# class UserSerializer(serializers.ModelSerializer):
+
+#     staff_profile = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = User
+
+#         fields = [
+#             "id",
+#             "email",
+#             "role",
+#             "is_verified",
+#             "is_staff",
+#             "staff_profile",
+#         ]
+
+#     def get_staff_profile(self, obj):
+
+#         if not obj.is_staff:
+#             return None
+
+#         try:
+
+#             staff_profile = obj.staff_profile
+
+#             return {
+#                 "role": staff_profile.role,
+
+#                 "job_title":
+#                     staff_profile.job_title,
+
+#                 "department":
+#                     staff_profile.department,
+
+#                 "phone_number":
+#                     staff_profile.phone_number,
+
+#                 "is_active_staff":
+#                     staff_profile.is_active_staff,
+#             }
+
+#         except StaffProfile.DoesNotExist:
+
+#             return None
 
 
 # class LogoutSerializer(serializers.Serializer):
@@ -149,3 +248,6 @@ class VerifyResetOTPSerializer(serializers.Serializer):
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     new_password = serializers.CharField(write_only=True)
+
+
+
