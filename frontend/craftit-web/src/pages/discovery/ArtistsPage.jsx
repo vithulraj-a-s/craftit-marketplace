@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getArtists } from '../../services/artistService';
+import { getArtists, semanticArtistSearch } from '../../services/artistService';
 import ArtistCard from '../../components/discovery/ArtistCard';
 import ArtistFilterSidebar from '../../components/discovery/ArtistFilterSidebar';
 import ArtistSearchBar from '../../components/discovery/ArtistSearchBar';
@@ -22,6 +22,7 @@ export default function ArtistsPage() {
 
   const [filters, setFilters] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSemanticMode, setIsSemanticMode] = useState(false);
 
   useEffect(() => {
     const params = Object.fromEntries(searchParams.entries());
@@ -50,20 +51,37 @@ export default function ArtistsPage() {
     }
   }, []);
 
+  const handleSearch = async () => {
+    const query = searchTerm.trim();
+    if (!query) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      setIsSemanticMode(true);
+      const data = await semanticArtistSearch(query);
+      setArtists(data.results || data);
+    } catch (err) {
+      console.error(err);
+      setError("Semantic search failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Normal Browsing / Restoration Effect
   useEffect(() => {
+    if (searchTerm.trim()) return;
+
+    setIsSemanticMode(false);
     const currentParams = Object.fromEntries(searchParams.entries());
     fetchArtistsList(currentParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [searchParams, fetchArtistsList]);
+  }, [searchParams, fetchArtistsList, searchTerm]);
 
   const pushParams = (newParams) => {
     setSearchParams(newParams);
-  };
-
-  const handleSearch = () => {
-    const newParams = { ...Object.fromEntries(searchParams.entries()), search: searchTerm, page: 1 };
-    if (!searchTerm) delete newParams.search;
-    pushParams(newParams);
   };
 
   const updateFilter = (key, value) => {
@@ -105,6 +123,11 @@ export default function ArtistsPage() {
               <Filter size={20} className="text-gray-700" />
             </button>
           </div>
+          {loading && isSemanticMode && (
+            <div className="mt-4 flex items-center text-indigo-600">
+               <span className="text-sm font-medium animate-pulse">Searching semantically...</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -140,11 +163,13 @@ export default function ArtistsPage() {
                   ))}
                 </div>
                 
-                <PaginationControls 
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                {!isSemanticMode && (
+                  <PaginationControls 
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                )}
               </>
             )}
           </main>

@@ -16,6 +16,8 @@ class PortfolioItem(models.Model):
     portrait_style = models.CharField(max_length=50)
     image = models.ImageField(upload_to="portfolio_items/")
     is_featured = models.BooleanField(default=False)
+    
+    likes_count = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

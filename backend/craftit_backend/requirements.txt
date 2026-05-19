@@ -26,3 +26,4 @@ tzdata==2025.3
 urllib3==2.6.3
 virtualenv==20.35.4
 razorpay==2.0.1
+httpx

@@ -62,6 +62,7 @@ class ArtistProfileDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArtistProfile
         fields = [
+            "id",
             "display_name",
             "slug",
             "email",

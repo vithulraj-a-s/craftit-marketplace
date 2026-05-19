@@ -10,19 +10,16 @@ logger = logging.getLogger(__name__)
 print("CONSUMERS FILE LOADED")
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
-        print("CONNECT FUNCTION CALLED")
-
-        self.user = self.scope["user"]
-        print("USER IN CONNECT: ",self.user)
 
         if not self.user or not getattr(self.user, "is_authenticated", False):
             print("Anonymus user")
             self.close()
             return
         
-        print("User: ", self.user.id)
+        # print("User: ", self.user.id)
 
         self.user_group_name = f"user_{self.user.id}"
+        # print("JOINING USER GROUP:", self.user_group_name)
 
         async_to_sync(self.channel_layer.group_add)(
             self.user_group_name,
@@ -62,6 +59,8 @@ class ChatConsumer(WebsocketConsumer):
         print(f"[DISCONNECT] User {self.user.id}")
 
     def receive(self, text_data):
+        print("🚀 RECEIVE HIT")
+        print("📩 RAW DATA:", text_data)
         try:
             data = json.loads(text_data)
         except json.JSONDecodeError:
@@ -93,8 +92,6 @@ class ChatConsumer(WebsocketConsumer):
 
             return
 
-
-
         if(
             not message and not file_url
         ):
@@ -106,7 +103,7 @@ class ChatConsumer(WebsocketConsumer):
         sender_role = getattr(self.user, "role", "client")
 
         saved_message = {
-            "conversation_id": self.conversation_id,
+            "conversation_id": str(self.conversation_id),
             "sender_id": self.user.id,
             "sender_role": sender_role,
             "type": message_type,
@@ -123,7 +120,7 @@ class ChatConsumer(WebsocketConsumer):
 
         participants_collection.update_many(
             {
-                "conversation_id": self.conversation_id,
+                "conversation_id": str(self.conversation_id),
                 "user_id": {"$ne": self.user.id}
             },
             {
@@ -133,7 +130,7 @@ class ChatConsumer(WebsocketConsumer):
 
         participants_collection.update_one(
             {
-                "conversation_id": self.conversation_id,
+                "conversation_id": str(self.conversation_id),
                 "user_id": self.user.id
             },
             {
@@ -152,20 +149,49 @@ class ChatConsumer(WebsocketConsumer):
             }
         )
 
-        participants = participants_collection.find({
-            "conversation_id": self.conversation_id
-        })
+        print("🔥 CURRENT USER:", self.user.id)
 
+        participants = list(participants_collection.find({
+            "conversation_id": str(self.conversation_id)
+        }))
+        print("🔥 PARTICIPANTS:", participants)
+
+        # for participant in participants:
+        #     if participant["user_id"] != self.user.id:
+        #         target_user_id = participant["user_id"]
+
+        #         async_to_sync(self.channel_layer.group_send)(
+        #             f"user_{target_user_id}",
+        #             {
+        #                 "type": "notify_user",
+        #                 "conversation_id": self.conversation_id,
+        #                 "sender_id": self.user.id
+        #             }
+        #         )
         for participant in participants:
+            print("👀 CHECKING PARTICIPANT:", participant)
+
+
             if participant["user_id"] != self.user.id:
+                print("✅ TARGET FOUND")
+
                 target_user_id = participant["user_id"]
+
+                print("🎯 TARGET USER:", target_user_id)
+
+                participant_data = participants_collection.find_one({
+                    "conversation_id": str(self.conversation_id),
+                    "user_id": target_user_id
+                })
+
+                print("SENDING UNREAD EVENT TO:", f"user_{target_user_id}")
 
                 async_to_sync(self.channel_layer.group_send)(
                     f"user_{target_user_id}",
                     {
                         "type": "notify_user",
-                        "conversation_id": self.conversation_id,
-                        "sender_id": self.user.id
+                        "conversation_id": str(self.conversation_id),
+                        "unread_count": participant_data["unread_count"]
                     }
                 )
 
@@ -204,7 +230,10 @@ class ChatConsumer(WebsocketConsumer):
             }))
             
     def notify_user(self, event):
+        print("🔥 NOTIFY USER EVENT:", event)
+
         self.send(text_data=json.dumps({
             "type": "unread_update",
-            "conversation_id": event["conversation_id"]
+            "conversation_id": event["conversation_id"],
+            "unread_count": event["unread_count"]
         }))

@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     container_name: craftit_db_container
     restart: always
     env_file:
@@ -29,6 +29,18 @@ services:
       - "27017:27017"
     volumes:
       - craftit_mongo_data:/data/db
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: ai-service
+    ports:
+      - "8002:8001"
+    volumes:
+      - ./ai-service:/app
+    env_file:
+      - ./ai-service/.env
+    restart: unless-stopped
       
   chat:
     build:

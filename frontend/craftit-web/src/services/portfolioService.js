@@ -27,3 +27,13 @@ export const deletePortfolioItem = async (id) => {
   const response = await axiosInstance.delete(`/api/portfolio/${id}/delete/`);
   return response.data;
 };
+
+export const likePortfolioItem = async (id) => {
+  const response = await axiosInstance.post(`/api/likes/${id}/like/`);
+  return response.data;
+};
+
+export const unlikePortfolioItem = async (id) => {
+  const response = await axiosInstance.delete(`/api/likes/${id}/unlike/`);
+  return response.data;
+};

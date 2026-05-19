@@ -17,6 +17,7 @@ class PortfolioItemSerializer(serializers.ModelSerializer):
             "is_featured",
             "created_at",
             "updated_at",
+            "likes_count",
         ]
 
 

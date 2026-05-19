@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
 import { Loader } from '../../components/ui/Loader';
-import { IndianRupee, Clock, CheckCircle, MessageCircle, AlertCircle, Package } from 'lucide-react';
+import { IndianRupee, Clock, CheckCircle, MessageCircle, AlertCircle, Package, Star } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { updateOrderStatus } from '../../services/orderService';
+import { createReview, updateReview, getOrderReview } from '../../services/reviewService';
 
 export default function OrderDetailPage() {
   const { id } = useParams();
@@ -10,7 +13,15 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Review states
+  const [existingReview, setExistingReview] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [isEditingReview, setIsEditingReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, review: '' });
+  const [completionLoading, setCompletionLoading] = useState(false);
 
   const handleChatClick = (orderId) => {
     navigate(`/chat/${orderId}`);
@@ -18,6 +29,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     const fetchOrder = async () => {
+      if (!id) return;
       try {
         setLoading(true);
         const response = await axiosInstance.get(`/api/orders/${id}/`);
@@ -31,8 +43,81 @@ export default function OrderDetailPage() {
       }
     };
 
-    if (id) fetchOrder();
+    fetchOrder();
   }, [id]);
+
+  useEffect(() => {
+    const fetchReview = async () => {
+      if (!order || order.status !== 'completed' || user?.role !== 'CLIENT') return;
+
+      try {
+        setReviewLoading(true);
+        const review = await getOrderReview(order.id);
+        
+        if (review) {
+          setExistingReview(review);
+          setReviewForm({ rating: review.rating, review: review.review });
+        }
+      } catch (err) {
+        if (err.response && err.response.status === 404) {
+          // Review does not exist yet
+          setExistingReview(null);
+        } else {
+          console.error("Failed to fetch order review", err);
+        }
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
+    fetchReview();
+  }, [order?.status, order?.id, user?.role]);
+
+  const handleMarkCompleted = async () => {
+    if (!order) return;
+    try {
+      setCompletionLoading(true);
+      const updated = await updateOrderStatus(order.id, {status: 'completed'});
+      setOrder(prev => ({ 
+        ...prev, 
+        status: 'completed', 
+        completed_at: updated.completed_at || new Date().toISOString() 
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to mark order as completed.");
+    } finally {
+      setCompletionLoading(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!order) return;
+    try {
+      setReviewLoading(true);
+      if (existingReview && isEditingReview) {
+        const updated = await updateReview(existingReview.id, {
+          rating: reviewForm.rating,
+          review: reviewForm.review
+        });
+        setExistingReview({ ...existingReview, ...updated });
+        setIsEditingReview(false);
+      } else {
+        const created = await createReview({
+          order_id: order.id,
+          rating: reviewForm.rating,
+          review: reviewForm.review
+        });
+        setExistingReview(created);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save review.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   const getStatusDisplay = (status) => {
     switch (status) {
@@ -47,7 +132,7 @@ export default function OrderDetailPage() {
       case 'cancelled':
         return { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-800', label: status };
+        return { bg: 'bg-gray-100', text: 'text-gray-800', label: status || 'Unknown' };
     }
   };
 
@@ -70,6 +155,7 @@ export default function OrderDetailPage() {
   }
 
   const statusConfig = getStatusDisplay(order.status);
+  const isClient = user?.role === 'CLIENT';
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
@@ -180,19 +266,115 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Actions */}
-          {order.status?.toUpperCase() === 'IN_PROGRESS' && (
+          {/* Actions Section */}
+          {(order.status === 'in_progress' || (order.status === 'delivered' && isClient)) && (
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">
                 Actions
               </h2>
-              <button 
-                onClick={() => handleChatClick(order.id)}
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
-              >
-                <MessageCircle size={20} />
-                Chat with Artist
-              </button>
+              <div className="space-y-4">
+                {(order.status === 'in_progress' || order.status === 'delivered') && (
+                  <button 
+                    onClick={() => handleChatClick(order.id)}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                  >
+                    <MessageCircle size={20} />
+                    Chat with Artist
+                  </button>
+                )}
+
+                {order.status === 'delivered' && isClient && (
+                  <button 
+                    onClick={handleMarkCompleted}
+                    disabled={completionLoading}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all active:scale-95 disabled:opacity-70"
+                  >
+                    {completionLoading ? <Loader size={20} color="white" /> : <CheckCircle size={20} />}
+                    Mark as Completed
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Review Section */}
+          {order.status === 'completed' && isClient && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
+                <Star size={20} className="text-yellow-500" />
+                Artist Review
+              </h2>
+
+              {reviewLoading && !existingReview ? (
+                <div className="flex justify-center py-4"><Loader size={24} /></div>
+              ) : existingReview && !isEditingReview ? (
+                <div className="space-y-4">
+                  <div className="flex gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} size={18} className={star <= existingReview.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} />
+                    ))}
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">{existingReview.review}</p>
+                  <p className="text-xs text-gray-400 mt-2 font-medium">
+                    Posted on {new Date(existingReview.created_at).toLocaleDateString()}
+                  </p>
+                  <button 
+                    onClick={() => setIsEditingReview(true)}
+                    className="mt-4 w-full px-4 py-3 bg-white border border-gray-200 text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl transition-colors"
+                  >
+                    Edit Review
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleReviewSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Rating</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                          className="focus:outline-none hover:scale-110 transition-transform"
+                        >
+                          <Star size={28} className={star <= reviewForm.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Your Review</label>
+                    <textarea
+                      required
+                      value={reviewForm.review}
+                      onChange={(e) => setReviewForm({ ...reviewForm, review: e.target.value })}
+                      placeholder="Share your experience working with this artist..."
+                      className="w-full rounded-xl border border-gray-200 p-4 text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all resize-none min-h-[100px]"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    {isEditingReview && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setIsEditingReview(false);
+                          setReviewForm({ rating: existingReview.rating, review: existingReview.review });
+                        }}
+                        className="flex-1 px-4 py-3 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-xl transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button 
+                      type="submit"
+                      disabled={reviewLoading}
+                      className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all active:scale-95 disabled:opacity-70 flex justify-center items-center"
+                    >
+                      {reviewLoading ? <Loader size={20} color="white" /> : (existingReview ? 'Update Review' : 'Submit Review')}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
         </div>

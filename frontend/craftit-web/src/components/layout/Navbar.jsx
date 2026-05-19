@@ -4,35 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { LogOut, LayoutDashboard, User, Users, Palette, Bookmark, Inbox, Package, FileText } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, unreadMap, fetchUnreadCounts } = useAuth();
   const navigate = useNavigate();
-  const [unreadMap, setUnreadMap] = useState({});
 
   useEffect(() => {
-    if (!user?.id) return;
-    const fetchUnreadCounts = async () => {
-      try {
-        const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          const map = {};
-          data.forEach(item => {
-            map[item.conversation_id] = item.unread_count;
-          });
-          setUnreadMap(map);
-        }
-      } catch (err) {
-        console.error("Failed to fetch unread counts", err);
-      }
-    };
-    fetchUnreadCounts();
-    
-    const handleFocus = () => {
+    if (user?.id) {
       fetchUnreadCounts();
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [user]);
+    }
+  }, [user?.id]);
 
   const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 

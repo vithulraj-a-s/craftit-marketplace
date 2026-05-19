@@ -5,6 +5,11 @@ export const getArtists = async (params = {}) => {
   return response.data;
 };
 
+export const semanticArtistSearch = async (query) => {
+  const response = await axiosInstance.post('/api/ai/semantic-search/', { query });
+  return response.data;
+};
+
 export const getArtistBySlug = async (slug) => {
   const response = await axiosInstance.get(`/api/artists/${slug}/`);
   return response.data;

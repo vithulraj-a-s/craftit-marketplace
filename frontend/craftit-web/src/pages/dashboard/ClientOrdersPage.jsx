@@ -8,12 +8,11 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function ClientOrdersPage() {
   const [orders, setOrders] = useState([]);
-  const [unreadMap, setUnreadMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [paymentLoadingId, setPaymentLoadingId] = useState(null);
   
-  const { user } = useAuth();
+  const { user, unreadMap, fetchUnreadCounts } = useAuth();
   const navigate = useNavigate();
 
   const handleChatClick = (orderId) => {
@@ -34,26 +33,11 @@ export default function ClientOrdersPage() {
   }
 };
 
-const fetchUnreadCounts = async () => {
-    if (!user?.id) return;
-    try {
-      const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        const map = {};
-        data.forEach(item => {
-          map[item.conversation_id] = item.unread_count;
-        });
-        setUnreadMap(map);
-      }
-    } catch (err) {
-      console.error("Failed to fetch unread counts", err);
-    }
-  };
-
 useEffect(() => {
     fetchOrders();
-    fetchUnreadCounts();
+    if (user?.id) {
+      fetchUnreadCounts();
+    }
   }, [user]);
 
 // 🔥 move handler out to stabilize reference
@@ -258,7 +242,7 @@ const handlePayNow = async (orderId) => {
                            )}
                          </button>
                       )}
-                      {(order.status === 'completed' || order.status === 'delivered') && (
+                      {(order.status === 'completed') && (
                         <span className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-500 font-bold rounded-xl cursor-not-allowed text-center inline-block">
                           Completed
                         </span>

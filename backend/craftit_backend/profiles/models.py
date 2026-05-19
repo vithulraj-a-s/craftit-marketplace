@@ -48,15 +48,14 @@ class ArtistProfile(models.Model):
     min_delivery_days = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     max_delivery_days = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
 
-    average_rating = models.DecimalField(
-        max_digits=3,
-        decimal_places=2,
-        default=0.00
-    )
+    average_rating = models.DecimalField(max_digits=3,decimal_places=2,default=0.00)
 
     total_reviews = models.PositiveIntegerField(default=0)
     total_completed_orders = models.PositiveIntegerField(default=0)
-    
+    total_likes = models.PositiveIntegerField(default=0)
+
+    ranking_score = models.DecimalField(max_digits=10,decimal_places=4,default=0.0000,)
+        
     def clean(self):
         super().clean()
 

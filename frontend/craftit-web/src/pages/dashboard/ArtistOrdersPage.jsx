@@ -7,14 +7,13 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function ArtistOrdersPage() {
   const [orders, setOrders] = useState([]);
-  const [unreadMap, setUnreadMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [uploadFiles, setUploadFiles] = useState({});
   const fileInputRefs = useRef({});
   
-  const { user } = useAuth();
+  const { user, unreadMap, fetchUnreadCounts } = useAuth();
   const navigate = useNavigate();
   console.log("AUTH USER:", user);
 
@@ -36,37 +35,11 @@ export default function ArtistOrdersPage() {
     }
   };
 
-  const fetchUnreadCounts = async () => {
-    console.log("AUTH USER:", user);
-    if (!user?.id) return;
-    try {
-      const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-
-        console.log("UNREAD API DATA",data);
-        const map = {};
-        data.forEach(item => {
-          map[item.conversation_id] = item.unread_count;
-        });
-        console.log("UNREAD MAP",map);
-        setUnreadMap(map);
-      }
-    } catch (err) {
-      console.error("Failed to fetch unread counts", err);
-    }
-  };
-
   useEffect(() => {
     fetchOrders();
-    fetchUnreadCounts();
-    
-    const handleFocus = () => {
-      fetchOrders();
+    if (user?.id) {
       fetchUnreadCounts();
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    }
   }, [user?.id]);
 
   const handleFileChange = (orderId, e) => {

@@ -54,6 +54,10 @@ INSTALLED_APPS = [
     'payments',
     'chat',
     'dashboard',
+    'reviews',
+    'likes',
+
+    "ai.apps.AIConfig",
 
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',

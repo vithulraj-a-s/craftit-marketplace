@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getArtistBySlug } from '../../services/artistService';
-import { getArtistPortfolio } from '../../services/portfolioService';
+import { getArtistPortfolio, likePortfolioItem, unlikePortfolioItem } from '../../services/portfolioService';
 import { getSavedArtists, saveArtist, removeSavedArtist } from '../../services/savedArtistService';
 import { createPortraitRequest } from '../../services/portraitRequestService';
+import { getArtistReviews } from '../../services/reviewService';
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from '../../components/ui/Loader';
-import { MapPin, Star, Clock, CheckCircle, Award, X, Bookmark, BookmarkCheck, Upload } from 'lucide-react';
+import { MapPin, Star, Clock, CheckCircle, Award, X, Bookmark, BookmarkCheck, Upload, Heart } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function ArtistDetailPage() {
@@ -18,6 +19,13 @@ export default function ArtistDetailPage() {
   const [error, setError] = useState(null);
   const [lightboxImage, setLightboxImage] = useState(null);
   
+  const [likesMap, setLikesMap] = useState({});
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [nextUrl, setNextUrl] = useState(null);
+  const [prevUrl, setPrevUrl] = useState(null);
+
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -44,6 +52,13 @@ export default function ArtistDetailPage() {
         setArtist(artistData);
         const sortedPortfolio = [...portfolioData].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
         setPortfolio(sortedPortfolio);
+
+        const initialLikes = {};
+        sortedPortfolio.forEach(item => {
+          initialLikes[item.id] = { count: item.likes_count || 0, isLiked: false };
+        });
+        setLikesMap(initialLikes);
+
       } catch (err) {
         console.error(err);
         setError('Artist not found.');
@@ -53,6 +68,83 @@ export default function ArtistDetailPage() {
     };
     fetchData();
   }, [slug]);
+
+  // Fetch Reviews after Artist Detail Loads
+  useEffect(() => {
+    if (!artist?.id) return;
+    let isMounted = true;
+
+    const fetchReviews = async () => {
+      try {
+        setReviewsLoading(true);
+        const data = await getArtistReviews(artist.id);
+
+        if (!isMounted) return;
+
+        if (data && Array.isArray(data.results)) {
+          setReviews(data.results);
+          setNextUrl(data.next);
+          setPrevUrl(data.previous);
+        } else if (Array.isArray(data)) {
+          setReviews(data);
+          setNextUrl(null);
+          setPrevUrl(null);
+        } else {
+          setReviews([]);
+        }
+
+      } catch (err) {
+        if (isMounted) {
+          console.error("Failed to load reviews", err);
+          setReviews([]);
+        }
+      } finally {
+        if (isMounted) {
+          setReviewsLoading(false);
+        }
+      }
+    };
+
+    fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [artist?.id]);
+
+  const handleLoadMore = async () => {
+    if (!nextUrl || !artist?.id) return;
+    setMoreLoading(true);
+    try {
+      const data = await getArtistReviews(artist.id, nextUrl);
+      if (data && Array.isArray(data.results)) {
+        setReviews(prev => [...prev, ...data.results]);
+        setNextUrl(data.next);
+        setPrevUrl(data.previous);
+      }
+    } catch (err) {
+      console.error("Failed to load more reviews", err);
+    } finally {
+      setMoreLoading(false);
+    }
+  };
+
+  const handlePrevious = async () => {
+    if (!prevUrl || !artist?.id) return;
+    setMoreLoading(true);
+    try {
+      const data = await getArtistReviews(artist.id, prevUrl);
+      if (data && Array.isArray(data.results)) {
+        setReviews(data.results);
+        setNextUrl(data.next);
+        setPrevUrl(data.previous);
+      }
+    } catch (err) {
+      console.error("Failed to load previous reviews", err);
+    } finally {
+      setMoreLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (lightboxImage) {
@@ -93,6 +185,40 @@ export default function ArtistDetailPage() {
       console.error('Failed to toggle save status', err);
     } finally {
       setSaveLoading(false);
+    }
+  };
+
+  const handleLikeToggle = async (e, itemId) => {
+    e.stopPropagation();
+    
+    const current = likesMap[itemId];
+    if (!current) return;
+
+    const isLiking = !current.isLiked;
+
+    setLikesMap(prev => ({
+      ...prev,
+      [itemId]: {
+        isLiked: isLiking,
+        count: isLiking ? prev[itemId].count + 1 : Math.max(0, prev[itemId].count - 1)
+      }
+    }));
+
+    try {
+      if (isLiking) {
+        await likePortfolioItem(itemId);
+      } else {
+        await unlikePortfolioItem(itemId);
+      }
+    } catch (err) {
+      console.error("Failed to toggle like", err);
+      setLikesMap(prev => ({
+        ...prev,
+        [itemId]: {
+          isLiked: !isLiking,
+          count: !isLiking ? prev[itemId].count + 1 : Math.max(0, prev[itemId].count - 1)
+        }
+      }));
     }
   };
 
@@ -265,6 +391,15 @@ export default function ArtistDetailPage() {
                      <div className="absolute top-4 left-4 bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1">
                         <Star size={14} className="fill-current" /> Featured Piece
                      </div>
+                     <div className="absolute top-4 right-4 flex gap-2">
+                       <button 
+                         onClick={(e) => handleLikeToggle(e, featuredItem.id)}
+                         className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors"
+                       >
+                         <Heart size={16} className={likesMap[featuredItem.id]?.isLiked ? "fill-red-500 text-red-500" : "text-gray-500"} />
+                         {likesMap[featuredItem.id]?.count || 0}
+                       </button>
+                     </div>
                    </div>
                    <div className="w-full md:w-1/3 p-8 flex flex-col justify-center">
                      <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">{featuredItem.title}</h3>
@@ -285,6 +420,13 @@ export default function ArtistDetailPage() {
                          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-[10px] font-bold text-gray-700 uppercase tracking-wider shadow-sm">
                            {item.portrait_style}
                          </div>
+                         <button 
+                           onClick={(e) => handleLikeToggle(e, item.id)}
+                           className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[11px] font-bold text-gray-700 shadow-sm flex items-center gap-1 hover:bg-white transition-colors"
+                         >
+                           <Heart size={14} className={likesMap[item.id]?.isLiked ? "fill-red-500 text-red-500" : "text-gray-500"} />
+                           {likesMap[item.id]?.count || 0}
+                         </button>
                       </div>
                       <div className="p-5">
                         <h4 className="font-bold text-gray-900 mb-1 line-clamp-1">{item.title}</h4>
@@ -297,6 +439,160 @@ export default function ArtistDetailPage() {
             </div>
           )}
         </div>
+
+{/* Artist Reviews Section */}
+<div className="mb-12">
+  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    Client Reviews
+  </h2>
+
+  <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+
+    {/* Reviews Summary */}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
+
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <Star
+            className="text-yellow-500 fill-current"
+            size={24}
+          />
+
+          {artist?.average_rating
+            ? Number(artist.average_rating).toFixed(1)
+            : "No Ratings Yet"}
+        </h3>
+
+        <p className="text-gray-500 text-sm mt-1">
+          Based on {artist?.total_reviews || 0}{" "}
+          {artist?.total_reviews === 1
+            ? "review"
+            : "reviews"}
+        </p>
+      </div>
+
+      <div className="text-left sm:text-right">
+        <p className="text-gray-500 font-medium text-sm">
+          Completed Orders
+        </p>
+
+        <p className="text-lg font-bold text-gray-900">
+          {artist?.total_completed_orders || 0}
+        </p>
+      </div>
+
+    </div>
+
+    {/* Loading State */}
+    {reviewsLoading ? (
+
+      <div className="flex justify-center py-12">
+        <Loader size={32} />
+      </div>
+
+    ) : reviews.length === 0 ? (
+
+      /* Empty State */
+      <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
+
+        <Star
+          size={32}
+          className="text-gray-300 mx-auto mb-4"
+        />
+
+        <p className="text-gray-500 font-medium text-lg">
+          No reviews yet.
+        </p>
+
+      </div>
+
+    ) : (
+
+      /* Reviews List */
+      <div className="space-y-6">
+
+        {reviews.map((review) => (
+
+          <div
+            key={review.id}
+            className="bg-gray-50 p-6 rounded-2xl border border-gray-100"
+          >
+
+            <div className="flex justify-between items-start mb-3">
+
+              <div>
+
+                <span className="font-bold text-gray-900 block mb-1">
+                  {review.reviewer_name || "Client"}
+                </span>
+
+                <div className="flex gap-1">
+
+                  {[1, 2, 3, 4, 5].map((star) => (
+
+                    <Star
+                      key={star}
+                      size={16}
+                      className={
+                        star <= review.rating
+                          ? "text-yellow-500 fill-yellow-500"
+                          : "text-gray-300"
+                      }
+                    />
+
+                  ))}
+
+                </div>
+
+              </div>
+
+              <span className="text-xs text-gray-400 font-medium mt-1">
+                {review.created_at
+                  ? new Date(
+                      review.created_at
+                    ).toLocaleDateString()
+                  : ""}
+              </span>
+
+            </div>
+
+            <p className="text-gray-700 leading-relaxed text-sm italic">
+              {review.review}
+            </p>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    )}
+
+    {/* Pagination Buttons */}
+    {(nextUrl || prevUrl) && (
+      <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-gray-100">
+        {prevUrl && (
+          <button
+            onClick={handlePrevious}
+            disabled={moreLoading}
+            className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-indigo-600 font-bold rounded-xl transition-all shadow-sm disabled:opacity-50"
+          >
+            {moreLoading ? 'Loading...' : 'show less'}
+          </button>
+        )}
+        {nextUrl && (
+          <button
+            onClick={handleLoadMore}
+            disabled={moreLoading}
+            className="px-6 py-2.5 bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 font-bold rounded-xl transition-all shadow-sm disabled:opacity-50"
+          >
+            {moreLoading ? 'Loading more...' : 'show more'}
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">

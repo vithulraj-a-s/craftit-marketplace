@@ -36,7 +36,7 @@ class ArtistListView(APIView):
     def get(self, request):
         queryset = ArtistProfile.objects.filter(
             is_available_for_commission=True
-        ).order_by("-created_at")
+        ).order_by("-ranking_score","-created_at")
 
         for backend in self.filter_backends:
             queryset = backend.filter_queryset(
@@ -46,6 +46,7 @@ class ArtistListView(APIView):
             )
 
         paginator = self.pagination_class()
+        
         paginated_queryset = paginator.paginate_queryset(
             queryset,
             request,
