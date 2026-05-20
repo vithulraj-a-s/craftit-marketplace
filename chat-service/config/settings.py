@@ -24,10 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY") 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["*"] # change it. only used it because we are in development
-
+# ALLOWED_HOSTS = ["*"] # change it. only used it because we are in development
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS",
+    "localhost"
+).split(",")
 
 # Application definition
 
@@ -103,10 +106,15 @@ MONGO_URI = "mongodb://mongodb:27017"
 MONGO_DB_NAME = "craftit_chat"
 
 # cors for connecting to chat in frontend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173"
+).split(",")
 
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:5173"
+).split(",")
 CORS_ALLOW_CREDENTIALS = True
 
 
