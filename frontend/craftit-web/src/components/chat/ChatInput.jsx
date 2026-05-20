@@ -38,7 +38,7 @@ const ChatInput = ({ onSendMessage }) => {
         formData.append("file", selectedFile);
         
         const response = await axios.post(
-              'http://localhost:8000/chat/upload/',
+              '/api/chat-image/upload/',
               formData,
               {
                 withCredentials: true,

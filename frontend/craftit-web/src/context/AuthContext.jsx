@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
   const fetchUnreadCounts = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`http://localhost:8001/chat/conversations/?user_id=${user.id}`);
+      const response = await fetch(`/api/chat/conversations/?user_id=${user.id}`);
       if (response.ok) {
         const data = await response.json();
         const map = {};
@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const response = await axiosInstance.get("/auth/me/", { _retry: true });
+        const response = await axiosInstance.get("api/auth/me/", { _retry: true });
         setUser(response.data);
       } catch (err) {
         // 🔥 IMPORTANT: DO NOT TRIGGER ANYTHING HERE
@@ -62,9 +62,7 @@ export function AuthProvider({ children }) {
 
   // Global notification websocket connection
   useEffect(() => {
-    console.log("WEBSOCKET EFFECT RUNNING");
-    console.log("USER:", user);
-    console.log("CURRENT SOCKET:", wsRef.current);
+   
     if (!user?.id) {
       if (wsRef.current) {
         console.log("Closing active socket due to logout/user clearance");
@@ -74,13 +72,17 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    console.log("Establishing single global notification socket...");
     if (wsRef.current) {
-      console.log("⚠️ Closing stale socket before creating new one");
       wsRef.current.close();
     }
-    const wsUrl = "ws://localhost:8001/ws/notifications/";
+    const wsProtocol =
+      window.location.protocol === "https:" ? "wss" : "ws";
+
+    const wsUrl =
+      `${wsProtocol}://${window.location.host}/ws/notifications/`;
+
     const socket = new WebSocket(wsUrl);
+
     wsRef.current = socket;
 
     socket.onopen = () => {
@@ -129,7 +131,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     await loginUser({ email, password });
 
-    // 🔥 get user AFTER cookies are set
+    // get user AFTER cookies are set
     const userData = await getCurrentUser();
     setUser(userData);
 

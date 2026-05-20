@@ -1,17 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getClientNavbarSummary, getArtistNavbarSummary } from '../../services/activityService';
 import { LogOut, LayoutDashboard, User, Users, Palette, Bookmark, Inbox, Package, FileText } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout, unreadMap, fetchUnreadCounts } = useAuth();
   const navigate = useNavigate();
+  const [navbarSummary, setNavbarSummary] = useState({
+    quotes_pending: 0,
+    requests_pending: 0,
+    has_active_orders: false
+  });
 
   useEffect(() => {
     if (user?.id) {
       fetchUnreadCounts();
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setNavbarSummary({
+        quotes_pending: 0,
+        requests_pending: 0,
+        has_active_orders: false
+      });
+      return;
+    }
+
+    let isMounted = true;
+    const fetchNavbarSummary = async () => {
+      try {
+        const role = (user.role || '').toUpperCase();
+        if (role === 'CLIENT') {
+          const data = await getClientNavbarSummary();
+          if (isMounted) {
+            setNavbarSummary({
+              quotes_pending: data?.quotes_pending || 0,
+              requests_pending: 0,
+              has_active_orders: !!data?.has_active_orders
+            });
+          }
+        } else if (role === 'ARTIST') {
+          const data = await getArtistNavbarSummary();
+          if (isMounted) {
+            setNavbarSummary({
+              quotes_pending: 0,
+              requests_pending: data?.requests_pending || 0,
+              has_active_orders: !!data?.has_active_orders
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch navbar summary indicators:", err);
+      }
+    };
+
+    fetchNavbarSummary();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, user?.role]);
 
   const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 
@@ -37,19 +88,27 @@ export default function Navbar() {
           <div className="flex items-center space-x-4 sm:space-x-8">
             {user && (
               <div className="hidden sm:flex sm:items-center sm:space-x-8">
-                {isArtist && (
+                 {isArtist && (
                   <>
                     <Link to="/dashboard/artist" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <LayoutDashboard size={16} /> Dashboard
                     </Link>
-                    <Link to="/dashboard/artist/requests" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                    <Link to="/dashboard/artist/requests" className="relative text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Inbox size={16} /> Requests
+                      {navbarSummary.requests_pending > 0 && (
+                        <span className="bg-indigo-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1 font-semibold">
+                          {navbarSummary.requests_pending}
+                        </span>
+                      )}
                     </Link>
                     <Link to="/dashboard/artist/quotes" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <FileText size={16} /> Quotes
                     </Link>
                     <Link to="/dashboard/artist/orders" className="relative text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Package size={16} /> Orders
+                      {navbarSummary.has_active_orders && (
+                        <span className="w-2 h-2 bg-green-500 rounded-full ml-1" title="Active orders" />
+                      )}
                       {totalUnread > 0 && (
                         <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
                           {totalUnread}
@@ -73,11 +132,19 @@ export default function Navbar() {
                     <Link to="/dashboard/client/requests" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Inbox size={16} /> My Requests
                     </Link>
-                    <Link to="/dashboard/client/quotes" className="text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
+                    <Link to="/dashboard/client/quotes" className="relative text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <FileText size={16} /> My Quotes
+                      {navbarSummary.quotes_pending > 0 && (
+                        <span className="bg-indigo-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1 font-semibold">
+                          {navbarSummary.quotes_pending}
+                        </span>
+                      )}
                     </Link>
                     <Link to="/dashboard/client/orders" className="relative text-gray-500 hover:text-indigo-600 px-3 py-2 text-sm font-semibold flex items-center gap-2">
                       <Package size={16} /> My Orders
+                      {navbarSummary.has_active_orders && (
+                        <span className="w-2 h-2 bg-green-500 rounded-full ml-1" title="Active orders" />
+                      )}
                       {totalUnread > 0 && (
                         <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
                           {totalUnread}

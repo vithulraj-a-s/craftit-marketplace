@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'dashboard',
     'reviews',
     'likes',
+    "activity",
 
     "ai.apps.AIConfig",
 

@@ -15,7 +15,7 @@ export default function OrderRow({ order, index }) {
     setLoading(true);
     setErrorMsg('');
     try {
-      const response = await axiosInstance.patch(`/dashboard/orders/${currentOrder.id}/`, { status: targetStatus });
+      const response = await axiosInstance.patch(`/api/dashboard/orders/${currentOrder.id}/`, { status: targetStatus });
       setCurrentOrder(response.data.order || { ...currentOrder, status: targetStatus });
     } catch (err) {
       console.error('Error updating order status', err);

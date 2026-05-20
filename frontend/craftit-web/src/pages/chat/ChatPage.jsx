@@ -7,15 +7,20 @@ import ChatHeader from '../../components/chat/ChatHeader';
 import ChatMessages from '../../components/chat/ChatMessages';
 import ChatInput from '../../components/chat/ChatInput';
 
-const CHAT_BASE_URL = "http://localhost:8001";
-const CHAT_WS_URL = "ws://localhost:8001";
+const CHAT_BASE_URL = "";
+const CHAT_WS_URL = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
 
 const ChatPage = () => {
   const { orderId } = useParams();
   const { user } = useAuth();
-  const currentUserRole = user?.role || '';
-  
   const [orderData, setOrderData] = useState(null);
+  const currentUserRole = user?.role || '';
+  const receiverId =
+    currentUserRole.toUpperCase() === "CLIENT"
+      ? orderData?.artist?.id
+      : orderData?.client?.id;
+  console.log("RECEIVER ID:", receiverId);
+  
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const wsRef = useRef(null);
@@ -53,7 +58,7 @@ const ChatPage = () => {
     const fetchMessages = async () => {
       try {
         console.log("FETCHING MESSAGES FOR ORDER ID:",orderId);
-        const response = await axios.get(`${CHAT_BASE_URL}/chat/messages/${orderId}/`, {
+        const response = await axios.get(`${CHAT_BASE_URL}/api/chat/messages/${orderId}/`, {
           withCredentials: true
         });
         console.log("API RESPONSE: ",response.data);
@@ -89,7 +94,7 @@ const ChatPage = () => {
 
     const markAsRead = async () => {
       try {
-        await axios.post(`${CHAT_BASE_URL}/chat/mark-as-read/${orderId}/`, {
+        await axios.post(`${CHAT_BASE_URL}/api/chat/mark-as-read/${orderId}/`, {
           user_id: user.id
         });
       } catch (error) {
@@ -162,14 +167,28 @@ const ChatPage = () => {
     };
   }, [orderId]);
 
+  // const handleSendMessage = (payload) => {
+  //   console.log("Payload: ", payload);
+  //   if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+  //     wsRef.current.send(JSON.stringify(payload));
+  //   } else {
+  //     console.error('WebSocket is not connected');
+  //   }
+  // };
   const handleSendMessage = (payload) => {
-    console.log("Payload: ", payload);
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(payload));
-    } else {
-      console.error('WebSocket is not connected');
-    }
-  };
+      const finalPayload = {
+        ...payload,
+        receiver_id: receiverId
+      };
+
+      console.log("FINAL PAYLOAD:", finalPayload);
+
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify(finalPayload));
+      } else {
+        console.error('WebSocket is not connected');
+      }
+    };
 
   // Determine chat header details dynamically
   let otherUserName = 'Loading...';

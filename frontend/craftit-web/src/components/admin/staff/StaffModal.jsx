@@ -61,9 +61,9 @@ export default function StaffModal({ isOpen, onClose, staffData, onSuccess }) {
 
     try {
       if (isEdit) {
-        await axiosInstance.patch(`/dashboard/staff/${staffData.id}/`, payload);
+        await axiosInstance.patch(`/api/dashboard/staff/${staffData.id}/`, payload);
       } else {
-        await axiosInstance.post('/dashboard/staff/', payload);
+        await axiosInstance.post('/api/dashboard/staff/', payload);
       }
       onSuccess();
       onClose();

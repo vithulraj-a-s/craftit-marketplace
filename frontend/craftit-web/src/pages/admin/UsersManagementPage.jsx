@@ -31,7 +31,7 @@ export default function UsersManagementPage() {
       if (verifiedFilter) params.append('verified', verifiedFilter);
       if (activeFilter) params.append('active', activeFilter);
 
-      const response = await axiosInstance.get(`/dashboard/users/?${params.toString()}`);
+      const response = await axiosInstance.get(`/api/dashboard/users/?${params.toString()}`);
       setUsers(response.data);
 
       const data = response.data;

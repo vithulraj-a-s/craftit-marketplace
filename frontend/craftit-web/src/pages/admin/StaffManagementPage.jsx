@@ -21,7 +21,7 @@ export default function StaffManagementPage() {
 
   const fetchStaff = async () => {
     try {
-      const response = await axiosInstance.get('/dashboard/staff/list/');
+      const response = await axiosInstance.get('/api/dashboard/staff/list/');
       setStaffData(response.data);
     } catch (error) {
       console.error('Failed to fetch staff data', error);

@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 
-const BASE_URL = '/auth';
+const BASE_URL = '/api/auth';
 
 export const registerUser = async (data) => {
   const response = await axiosInstance.post(`${BASE_URL}/register/`, data);

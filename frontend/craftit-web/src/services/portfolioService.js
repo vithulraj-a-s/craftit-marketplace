@@ -37,3 +37,9 @@ export const unlikePortfolioItem = async (id) => {
   const response = await axiosInstance.delete(`/api/likes/${id}/unlike/`);
   return response.data;
 };
+
+export const getTrendingPortfolioItems = async () => {
+  const response = await axiosInstance.get('/api/portfolio/trending/');
+  return response.data;
+};
+

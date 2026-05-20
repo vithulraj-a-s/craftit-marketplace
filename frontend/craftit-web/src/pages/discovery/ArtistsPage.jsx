@@ -6,8 +6,10 @@ import ArtistFilterSidebar from '../../components/discovery/ArtistFilterSidebar'
 import ArtistSearchBar from '../../components/discovery/ArtistSearchBar';
 import PaginationControls from '../../components/common/PaginationControls';
 import EmptyState from '../../components/common/EmptyState';
+import TrendingPortfolioSection from '../../components/discovery/TrendingPortfolioSection';
 import { Loader } from '../../components/ui/Loader';
 import { Filter } from 'lucide-react';
+
 
 export default function ArtistsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -132,6 +134,8 @@ export default function ArtistsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <TrendingPortfolioSection />
+
         <div className="flex gap-8">
           
           <ArtistFilterSidebar 

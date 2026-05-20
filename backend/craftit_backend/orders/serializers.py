@@ -121,6 +121,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     def get_client(self, obj):
         client = obj.client_profile
         return {
+            "id": client.user.id,
             "full_name": client.full_name,
             "email": client.user.email,
         }
@@ -128,6 +129,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     def get_artist(self, obj):
         artist = obj.artist_profile
         return {
+            "id": artist.user.id,
             "display_name": artist.display_name,
             "email": artist.user.email,
         }

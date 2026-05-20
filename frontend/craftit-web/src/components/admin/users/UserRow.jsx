@@ -14,7 +14,7 @@ export default function UserRow({ user, index }) {
     e.stopPropagation();
     setLoadingActive(true);
     try {
-      await axiosInstance.patch(`/dashboard/users/${user.id}/`, { is_active: !isActive });
+      await axiosInstance.patch(`/api/dashboard/users/${user.id}/`, { is_active: !isActive });
       setIsActive(!isActive);
     } catch (err) {
       console.error('Error toggling active status', err);
@@ -27,7 +27,7 @@ export default function UserRow({ user, index }) {
     e.stopPropagation();
     setLoadingVerified(true);
     try {
-      await axiosInstance.patch(`/dashboard/users/${user.id}/`, { is_verified: !isVerified });
+      await axiosInstance.patch(`/api/dashboard/users/${user.id}/`, { is_verified: !isVerified });
       setIsVerified(!isVerified);
     } catch (err) {
       console.error('Error toggling verified status', err);

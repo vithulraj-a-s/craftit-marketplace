@@ -69,3 +69,29 @@ class PortfolioItemCreateUpdateSerializer(serializers.ModelSerializer):
             artist_profile=artist_profile,
             **validated_data
         )
+    
+class TrendingPortfolioSerializer(serializers.ModelSerializer):
+
+    artist = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PortfolioItem
+
+        fields = [
+            "id",
+            "image",
+            "likes_count",
+            "artist"
+        ]
+
+    def get_artist(self, obj):
+        return {
+            "id": obj.artist_profile.id,
+            "display_name": obj.artist_profile.display_name,
+            "slug": obj.artist_profile.slug,
+            "profile_image": (
+                obj.artist_profile.profile_image.url
+                if obj.artist_profile.profile_image
+                else None
+            )
+        }

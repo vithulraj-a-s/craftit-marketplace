@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000", 
+  baseURL: "", 
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -16,15 +16,16 @@ axiosInstance.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes("/auth/token/refresh/") &&
-      !originalRequest.url.includes("/auth/login/")
+      !originalRequest.url.includes("/api/auth/token/refresh/") &&
+      !originalRequest.url.includes("/api/auth/login/")
     ) {
       originalRequest._retry = true;
 
       try {
-        await axiosInstance.post("/auth/token/refresh/");
+        await axiosInstance.post("/api/auth/token/refresh/");
 
         return axiosInstance(originalRequest);
+
       } catch (refreshError) {
         window.location.href = "/login";
         return Promise.reject(refreshError);
@@ -34,4 +35,5 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 export default axiosInstance;

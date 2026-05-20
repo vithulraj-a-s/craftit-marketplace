@@ -15,7 +15,7 @@ from .models import PortfolioItem
 from .permissions import IsPortfolioOwner
 from .serializers import (
     PortfolioItemSerializer,
-    PortfolioItemCreateUpdateSerializer,
+    PortfolioItemCreateUpdateSerializer,TrendingPortfolioSerializer
 )
 
 class PortfolioCreateAPIView(APIView):
@@ -108,3 +108,26 @@ class PortfolioDeleteAPIView(APIView):
             status=status.HTTP_204_NO_CONTENT
         )
     
+class TrendingPortfolioAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+
+        queryset = (
+            PortfolioItem.objects
+            .select_related(
+                "artist_profile"
+            )
+            .order_by(
+                "-likes_count",
+                "-created_at"
+            )[:5]
+        )
+
+        serializer = TrendingPortfolioSerializer(
+            queryset,
+            many=True
+        )
+
+        return Response(serializer.data)

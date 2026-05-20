@@ -15,9 +15,9 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, chartsRes, activityRes] = await Promise.all([
-          axiosInstance.get('/dashboard/stats/'),
-          axiosInstance.get('/dashboard/charts/'),
-          axiosInstance.get('/dashboard/activity/')
+          axiosInstance.get('/api/dashboard/stats/'),
+          axiosInstance.get('/api/dashboard/charts/'),
+          axiosInstance.get('/api/dashboard/activity/')
         ]);
 
         setData({

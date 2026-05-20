@@ -29,7 +29,7 @@ export default function RequestsManagementPage() {
       if (statusFilter) params.append('status', statusFilter);
       if (styleFilter) params.append('style', styleFilter);
 
-      const response = await axiosInstance.get(`/dashboard/requests/?${params.toString()}`);
+      const response = await axiosInstance.get(`/api/dashboard/requests/?${params.toString()}`);
       setRequests(response.data);
 
       const data = response.data;

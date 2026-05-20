@@ -9,7 +9,7 @@ export default function StaffTable({ staffList, onEdit, onToggleStatus }) {
   const handleToggle = async (id, currentStatus) => {
     setTogglingId(id);
     try {
-      await axiosInstance.patch(`/dashboard/staff/${id}/toggle/`);
+      await axiosInstance.patch(`/api/dashboard/staff/${id}/toggle/`);
       onToggleStatus(id, !currentStatus);
     } catch (error) {
       console.error("Failed to toggle staff status", error);

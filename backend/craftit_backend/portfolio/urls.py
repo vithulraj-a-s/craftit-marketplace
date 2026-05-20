@@ -5,6 +5,7 @@ from .views import (
     ArtistPortfolioListAPIView,
     PortfolioUpdateAPIView,
     PortfolioDeleteAPIView,
+    TrendingPortfolioAPIView
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path("artists/<slug:slug>/",ArtistPortfolioListAPIView.as_view(),name="artist-portfolio-list"),
     path("<int:pk>/",PortfolioUpdateAPIView.as_view(),name="portfolio-update"),
     path("<int:pk>/delete/",PortfolioDeleteAPIView.as_view(),name="portfolio-delete"),
+    path("trending/",TrendingPortfolioAPIView.as_view(),name="trending-portfolio"),
 ]
