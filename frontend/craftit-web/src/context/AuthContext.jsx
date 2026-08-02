@@ -38,9 +38,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const response = await axiosInstance.get("api/auth/me/", { _retry: true });
+        const response = await axiosInstance.get("/api/auth/me/", { _retry: true });
         setUser(response.data);
-      } catch (err) {
+      } catch {
         // 🔥 IMPORTANT: DO NOT TRIGGER ANYTHING HERE
         setUser(null);
       } finally {

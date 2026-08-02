@@ -37,10 +37,6 @@ class LoginView(APIView):
 
         user = serializer.validated_data["user"]
 
-        # refresh = RefreshToken.for_user(user)
-        # access_token = str(refresh.access_token)
-        # refresh_token = str(refresh)
-
         refresh = RefreshToken.for_user(user)
         refresh["role"] = user.role
         refresh["email"] = user.email
@@ -56,12 +52,12 @@ class LoginView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
-        # ✅ Set cookies
+        
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,   # ⚠️ True in production
+            secure=False,   
             samesite="Lax",
         )
 

@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import ChatHeader from '../../components/chat/ChatHeader';
 import ChatMessages from '../../components/chat/ChatMessages';
 import ChatInput from '../../components/chat/ChatInput';
+import { Loader } from '../../components/ui/Loader';
 
 const CHAT_BASE_URL = "";
 const CHAT_WS_URL = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
@@ -25,7 +26,6 @@ const ChatPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const wsRef = useRef(null);
 
-  // A) Fetch Order Details
   useEffect(() => {
     if (!orderId) return;
     
@@ -49,9 +49,9 @@ const ChatPage = () => {
     };
   }, [orderId]);
 
-  // B) Fetch Chat History
+
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || !user) return;
 
     let isMounted = true;
 
@@ -86,9 +86,9 @@ const ChatPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [orderId]);
+  }, [orderId, user]);
 
-  // Mark as Read
+
   useEffect(() => {
     if (!orderId || !user) return;
 
@@ -96,6 +96,8 @@ const ChatPage = () => {
       try {
         await axios.post(`${CHAT_BASE_URL}/api/chat/mark-as-read/${orderId}/`, {
           user_id: user.id
+        }, {
+          withCredentials: true
         });
       } catch (error) {
         console.error('Failed to mark chat as read:', error);
@@ -105,9 +107,9 @@ const ChatPage = () => {
     markAsRead();
   }, [orderId, user]);
 
-  // C) WebSocket Connection
+
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || !user) return;
 
     const wsUrl = `${CHAT_WS_URL}/ws/chat/${orderId}/`;
     const ws = new WebSocket(wsUrl);
@@ -165,16 +167,8 @@ const ChatPage = () => {
         ws.close();
       }
     };
-  }, [orderId]);
+  }, [orderId, user]);
 
-  // const handleSendMessage = (payload) => {
-  //   console.log("Payload: ", payload);
-  //   if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-  //     wsRef.current.send(JSON.stringify(payload));
-  //   } else {
-  //     console.error('WebSocket is not connected');
-  //   }
-  // };
   const handleSendMessage = (payload) => {
       const finalPayload = {
         ...payload,
@@ -190,7 +184,6 @@ const ChatPage = () => {
       }
     };
 
-  // Determine chat header details dynamically
   let otherUserName = 'Loading...';
   let otherUserRole = 'Loading...';
 
@@ -207,8 +200,16 @@ const ChatPage = () => {
     }
   }
 
+  if (!user || !orderData) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-64px)] bg-gray-100">
+        <Loader size={48} />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-gray-100 font-sans">
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-100 font-sans">
       <ChatHeader 
         orderId={orderId || 'Unknown'} 
         otherUserName={otherUserName} 

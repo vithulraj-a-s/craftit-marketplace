@@ -235,16 +235,15 @@ export default function AppRoutes() {
 
         <Route path="/artists" element={<ArtistsPage />} />
         <Route path="/artists/:slug" element={<ArtistDetailPage />} />
+        <Route 
+          path="/chat/:orderId" 
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          } 
+        />
       </Route>
-
-      <Route 
-        path="/chat/:orderId" 
-        element={
-          <ProtectedRoute>
-            <ChatPage />
-          </ProtectedRoute>
-        } 
-      />
 
       <Route
         path="/admin"

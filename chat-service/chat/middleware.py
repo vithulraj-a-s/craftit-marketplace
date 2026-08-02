@@ -4,8 +4,6 @@ from jwt import ExpiredSignatureError, InvalidTokenError
 from django.conf import settings
 from http.cookies import SimpleCookie
 
-
-# 🔥 Simple lightweight user (NO DB call)
 class SimpleUser:
     def __init__(self, user_id, role):
         self.id = user_id
@@ -22,7 +20,6 @@ class JWTAuthMiddleware(BaseMiddleware):
         try:
             headers = dict(scope.get("headers", []))
 
-            # 🔥 Extract cookies
             raw_cookie = headers.get(b"cookie", b"").decode()
             print("🍪 RAW COOKIE:", raw_cookie)
 
@@ -31,7 +28,6 @@ class JWTAuthMiddleware(BaseMiddleware):
 
             token = None
 
-            # 🔥 IMPORTANT: match your actual cookie name
             if "access_token" in cookie:
                 token = cookie["access_token"].value
 
@@ -42,7 +38,6 @@ class JWTAuthMiddleware(BaseMiddleware):
                 scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            # 🔥 Decode JWT
             try:
                 decoded = jwt_decode(
                     token,
@@ -61,7 +56,6 @@ class JWTAuthMiddleware(BaseMiddleware):
                 scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            # 🔥 Extract user info
             user_id = decoded.get("user_id")
             role = decoded.get("role")
 
@@ -77,7 +71,6 @@ class JWTAuthMiddleware(BaseMiddleware):
                 scope["user"] = None
                 return await super().__call__(scope, receive, send)
 
-            # 🔥 Assign user
             scope["user"] = SimpleUser(
                 user_id=user_id,
                 role=role or "client"
