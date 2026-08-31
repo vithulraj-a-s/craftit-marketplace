@@ -52,8 +52,25 @@ export default function Register() {
       });
 
     } catch (err) {
-      console.log(err)
-      setError(err?.email || "Registration failed");
+      console.log(err);
+      const errorData = err?.response?.data;
+      if (errorData) {
+        if (typeof errorData === "object") {
+          const firstKey = Object.keys(errorData)[0];
+          const firstVal = errorData[firstKey];
+          if (Array.isArray(firstVal)) {
+            setError(firstVal[0]);
+          } else if (typeof firstVal === "string") {
+            setError(firstVal);
+          } else {
+            setError(errorData.detail || errorData.message || "Registration failed");
+          }
+        } else {
+          setError("Registration failed");
+        }
+      } else {
+        setError(err?.message || "Registration failed");
+      }
     } finally {
       setIsLoading(false);
     }

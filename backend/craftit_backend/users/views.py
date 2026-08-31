@@ -22,8 +22,11 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save(is_verified=False)
-
-        send_otp(user.email)
+        try:
+            send_otp(user.email)
+        except Exception as e:
+            user.delete()
+            raise e
 
 
 

@@ -52,16 +52,17 @@ export default function Login() {
       }
 
     } catch (err) {
-      console.log(err)
-      console.log(err.detail)
+      console.log(err);
+      const errorData = err?.response?.data;
+      const errorCode = errorData?.code;
+      const errorDetail = errorData?.detail;
 
-      if(err?.code == "not_verified"){
-        setError("Account is not verified. Please verify ")
-        setShowVerifyOption(true)
-      }else{
-        setError(err.detail || "Login failed");
+      if (errorCode === "not_verified") {
+        setError("Account is not verified. Please verify ");
+        setShowVerifyOption(true);
+      } else {
+        setError(errorDetail || err?.message || "Login failed");
       }
-
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +80,7 @@ const handleVerifyRedirect = async () => {
     });
 
   } catch (err) {
-    setError(err?.detail || "Failed to send verification email");
+    setError(err?.response?.data?.detail || err?.message || "Failed to send verification email");
   } finally {
     setIsLoading(false);
   }

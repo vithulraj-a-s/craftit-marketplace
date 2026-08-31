@@ -77,11 +77,23 @@ services:
     environment:
       DB_HOST: db
       REDIS_HOST: redis
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      EMAIL_USE_TLS: "False"
     ports:
       - "8000:8000"
     depends_on:
       - db
       - redis
+      - mailpit
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: craftit_mailpit_container
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
   frontend:
     build:

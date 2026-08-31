@@ -29,7 +29,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -205,27 +205,33 @@ REDIS_DB = 0
 
 # email settings configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 1025))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False") == "True"
 
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+if EMAIL_HOST in ["mailpit", "localhost"] and EMAIL_PORT == 1025:
+    EMAIL_HOST_USER = ""
+    EMAIL_HOST_PASSWORD = ""
+else:
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+
+DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER", "") or 'craftit.help@gmail.com'
 
 
 #aws details and configuration lives here
-AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME")
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default=None)
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default=None)
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default=None)
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default=None)
 
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = False
 AWS_S3_FILE_OVERWRITE = False
 AWS_S3_VERIFY = True
 
-MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/"
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
@@ -233,14 +239,7 @@ AWS_S3_OBJECT_PARAMETERS = {
 
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "bucket_name": "craftit-django-media-2026",
-            "region_name": "us-east-1",
-            "default_acl": None,
-            "querystring_auth": False,
-            "file_overwrite": False,
-        },
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",

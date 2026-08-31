@@ -23,7 +23,16 @@ def send_reset_otp(email:str):
 
     redis_client.delete(attempts_key)
 
-    send_otp_mail(email,otp)
+    try:
+        send_otp_mail(email, otp)
+    except Exception as e:
+        redis_client.delete(otp_key)
+        redis_client.delete(cooldown_key)
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({
+            "detail": "Failed to send reset OTP email. Please check SMTP settings.",
+            "code": "email_send_failed"
+        })
 
     return True, {"detail":"Sent reset OTP successfully", "code":"Reset otp sent"}
 

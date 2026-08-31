@@ -54,27 +54,27 @@ export default function VerifyOTP() {
       navigate("/dashboard");
 
     } catch (err) {
-      console.log(err)
-      setError(err?.detail || "Verification failed");
+      console.log(err);
+      setError(err?.response?.data?.detail || err?.message || "Verification failed");
     } finally {
       setIsLoading(false);
     }
   };
-
+ 
   const handleResend = async () => {
     setError("");
     setSuccess("");
-
+ 
     try {
       setIsResending(true);
-
+ 
       await resendOTP({ email });
-
+ 
       setSuccess("OTP resent successfully");
-
+ 
     } catch (err) {
-      console.log(err)
-      setError(err?.detail || "Failed to resend OTP");
+      console.log(err);
+      setError(err?.response?.data?.detail || err?.message || "Failed to resend OTP");
     } finally {
       setIsResending(false);
     }

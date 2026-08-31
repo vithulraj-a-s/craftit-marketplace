@@ -46,8 +46,8 @@ export default function ForgotPassword() {
       setStep(2);
 
     } catch (err) {
-      console.log(err)
-      setError(err?.detail || "Failed to send OTP");
+      console.log(err);
+      setError(err?.response?.data?.detail || err?.message || "Failed to send OTP");
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +70,8 @@ export default function ForgotPassword() {
       setStep(3);
 
     } catch (err) {
-      setError(err?.detail || "Invalid OTP");
+      console.log(err);
+      setError(err?.response?.data?.detail || err?.message || "Invalid OTP");
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +102,8 @@ export default function ForgotPassword() {
       setStep(4);
 
     } catch (err) {
-      setError(err?.detail || "Reset failed");
+      console.log(err);
+      setError(err?.response?.data?.detail || err?.message || "Reset failed");
     } finally {
       setIsLoading(false);
     }

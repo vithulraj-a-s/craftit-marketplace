@@ -30,7 +30,16 @@ def send_otp(email: str):
 
     redis_client.set(cooldown_key, "1", ex=RESEND_COOLDOWN)
 
-    send_otp_mail(email,otp)
+    try:
+        send_otp_mail(email, otp)
+    except Exception as e:
+        redis_client.delete(key)
+        redis_client.delete(cooldown_key)
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({
+            "detail": "Failed to send verification email. Please check SMTP settings or network connection.",
+            "code": "email_send_failed"
+        })
 
     return True, {"detail":"OTP sent successfully", "code":"otp sent"}
 
